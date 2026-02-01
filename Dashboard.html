@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hairtistique Barber | Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+</head>
+<body>
+
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="brand">
+                <span class="logo-dot"></span>
+                <h1>HAIRTISTIQUE</h1>
+            </div>
+            <nav class="menu">
+                <a href="Dashboard.html" class="menu-item active">Tableau de bord</a>
+                <a href="caisse.html" class="menu-item">Ventes & Caisse</a>
+                <a href="stocks.html" class="menu-item">Stocks Produits</a>
+                <a href="stats.html" class="menu-item">Statistiques</a>
+            </nav>
+            <div class="sidebar-footer">
+                <p>Lomé, Togo</p>
+            </div>
+        </aside>
+
+        <main class="content">
+            <header class="main-header">
+                <button class="menu-burger" onclick="toggleSidebar()">☰</button>
+                <div class="header-text">
+                    <h2>Content de vous revoir 👋</h2>
+                    <p id="live-date">Chargement...</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-primary" onclick="toggleModal('modal-coupe')">+ Nouvelle Coupe</button>
+                </div>
+            </header>
+
+            <section class="stats-grid">
+                <div class="stat-card dark">
+                    <label>Revenu Aujourd'hui</label>
+                    <div class="value" id="total-revenue">0 FCFA</div>
+                </div>
+                <div class="stat-card">
+                    <label>Clients coiffés</label>
+                    <div class="value" id="total-clients">0</div>
+                </div>
+                <div class="stat-card">
+                    <label>Alerte Stocks</label>
+                    <div class="value" id="low-stock-count" style="color: #fa5252;">0</div>
+                </div>
+            </section>
+
+            <section class="data-section">
+    <div class="section-header">
+        <h3>Dernières activités</h3>
+        <div class="header-buttons">
+            <button class="btn-text" onclick="exportToExcel()" style="margin-right: 10px; cursor: pointer;">💾 Exporter Excel</button>
+            <a href="caisse.html" class="btn-text">Voir tout l'historique</a>
+        </div>
+    </div>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Heure</th>
+                    <th>Client</th>
+                    <th>Prestation</th>
+                    <th>Montant</th>
+                </tr>
+            </thead>
+            <tbody id="home-sales-table">
+                </tbody>
+        </table>
+    </div>
+</section>
+        </main>
+    </div>
+
+    <div id="modal-coupe" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Enregistrer une prestation</h3>
+                <span class="close" onclick="toggleModal('modal-coupe')">&times;</span>
+            </div>
+            <form id="sale-form">
+                <div class="form-group">
+                    <label>Nom du client</label>
+                    <input type="text" id="client-name" placeholder="Ex: M. Koffi">
+                </div>
+                <div class="form-group">
+                    <label>Type de service</label>
+                    <select id="service-select" required>
+                        <option value="Coupe Homme">Coupe Homme</option>
+                        <option value="Barbe">Barbe</option>
+                        <option value="Teinture">Teinture</option>
+                        <option value="Complet">Pack Complet</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Prix (FCFA)</label>
+                    <input type="number" id="price-input" required placeholder="5000">
+                </div>
+                <div class="form-group">
+                    <label>Paiement</label>
+                    <select id="payment-method">
+                        <option value="Espèces">Espèces</option>
+                        <option value="T-Money">T-Money</option>
+                        <option value="Moov Money">Moov Money</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-full">Confirmer</button>
+            </form>
+        </div>
+    </div>
+
+<script type="module" src="script.js"></script>
+<div id="sidebar-backdrop" onclick="toggleSidebar()"></div>
+</body>
+</html>

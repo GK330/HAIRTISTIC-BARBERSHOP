@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statistiques | Hairtistique Barber</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="brand"><span class="logo-dot"></span><h1>HAIRTISTIQUE</h1></div>
+            <nav class="menu">
+                <a href="Dashboard.html" class="menu-item">Tableau de bord</a>
+                <a href="caisse.html" class="menu-item">Ventes & Caisse</a>
+                <a href="stocks.html" class="menu-item">Stocks Produits</a>
+                <a href="stats.html" class="menu-item active">Statistiques</a>
+            </nav>
+        </aside>
+
+        <main class="content">
+            <header class="main-header">
+                <div class="header-text">
+                    <h2>Analyse de Performance</h2>
+                    <p>Suivez la croissance de votre salon à Lomé</p>
+                </div>
+            </header>
+
+            <section class="stats-grid">
+                <div class="stat-card">
+                    <label>Chiffre d'Affaires Total</label>
+                    <div class="value" id="grand-total">0 FCFA</div>
+                </div>
+                <div class="stat-card">
+                    <label>Moyenne par Client</label>
+                    <div class="value" id="avg-client">0 FCFA</div>
+                </div>
+            </section>
+
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 30px; margin-top: 30px;">
+                <div class="table-container" style="padding: 30px;">
+                    <h3>Évolution des Revenus (7 derniers jours)</h3>
+                    <canvas id="revenueChart"></canvas>
+                </div>
+
+                <div class="table-container" style="padding: 30px;">
+                    <h3>Top Services</h3>
+                    <canvas id="servicesChart"></canvas>
+                </div>
+            </div>
+        </main>
+    </div>
+
+<script type="module" src="script.js"></script>
+</body>
+</html>

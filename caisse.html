@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caisse | Hairtistique Barber</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="brand"><span class="logo-dot"></span><h1>HAIRTISTIQUE</h1></div>
+            <nav class="menu">
+                <a href="Dashboard.html" class="menu-item">Tableau de bord</a>
+                <a href="caisse.html" class="menu-item active">Ventes & Caisse</a>
+                <a href="stocks.html" class="menu-item">Stocks Produits</a>
+                <a href="stats.html" class="menu-item">Statistiques</a>
+            </nav>
+        </aside>
+
+        <main class="content">
+            <header class="main-header">
+                <button class="menu-burger" onclick="toggleSidebar()">☰</button>
+                <div class="header-text">
+                    <h2>Journal de Caisse</h2>
+                    <p>Historique complet des transactions</p>
+                </div>
+                <button class="btn btn-primary" onclick="exportToExcel()">💾 Exporter Rapport</button>
+            </header>
+
+            <section class="filters-section" style="margin-bottom: 30px; display: flex; gap: 15px;">
+                <input type="text" id="search-client" placeholder="Rechercher un client..." onkeyup="filterSales()" style="flex: 2;">
+                <select id="filter-payment" onchange="filterSales()" style="flex: 1;">
+                    <option value="all">Tous les paiements</option>
+                    <option value="Espèces">Espèces</option>
+                    <option value="T-Money">T-Money</option>
+                    <option value="Moov Money">Moov Money</option>
+                </select>
+            </section>
+
+            <section class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Heure</th>
+                            <th>Client</th>
+                            <th>Service</th>
+                            <th>Mode</th>
+                            <th>Montant</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="full-sales-table">
+                        </tbody>
+                </table>
+            </section>
+        </main>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+<script type="module" src="script.js"></script>
+<div id="sidebar-backdrop" onclick="toggleSidebar()"></div>
+</body>
+</html>
