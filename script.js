@@ -92,7 +92,7 @@ if (productForm) {
 
 // 5. RENDU DES TABLES (Sécurisé)
 function renderTables() {
-    // Table Dashboard
+    // 1. Table Dashboard (Affiche seulement les 5 derniers)
     const homeTable = document.getElementById('home-sales-table');
     if (homeTable) {
         homeTable.innerHTML = salesData.slice(0, 5).map(s => `
@@ -103,6 +103,68 @@ function renderTables() {
                 <td><b>${s.price.toLocaleString()} F</b></td>
             </tr>`).join('');
     }
+
+    // 2. Table Caisse (Affiche TOUT avec filtres et bouton supprimer)
+    const fullTable = document.getElementById('full-sales-table');
+    if (fullTable) {
+        // On utilise les données filtrées si elles existent, sinon on prend tout
+        const dataToDisplay = window.filteredSales || salesData;
+
+        fullTable.innerHTML = dataToDisplay.map(s => `
+            <tr>
+                <td>${s.date}</td>
+                <td>${s.time}</td>
+                <td>${s.client}</td>
+                <td>${s.service}</td>
+                <td><span style="background:#eee; padding:4px 8px; border-radius:6px; font-size:0.8rem;">${s.payment}</span></td>
+                <td><b>${s.price.toLocaleString()} F</b></td>
+                <td>
+                    <button onclick="deleteSale('${s.id}')" style="color:#ff4d4d; border:none; background:none; cursor:pointer; font-weight:bold;">Supprimer</button>
+                </td>
+            </tr>`).join('');
+    }
+
+    // 3. Table Stocks (Garde ton code actuel)
+    const stockTable = document.getElementById('stock-table');
+    if (stockTable) {
+        stockTable.innerHTML = stockData.map(p => `
+            <tr>
+                <td><img src="${p.image}" style="width:40px; height:40px; border-radius:5px; object-fit:cover;"></td>
+                <td>${p.name}</td>
+                <td>${p.price.toLocaleString()} F</td>
+                <td>${p.quantity}</td>
+                <td><button onclick="deleteProduct('${p.id}')" style="color:red; border:none; background:none; cursor:pointer;">Supprimer</button></td>
+            </tr>`).join('');
+    }
+}
+// Fonction appelée par onkeyup dans ton HTML
+window.filterSales = () => {
+    const searchName = document.getElementById('search-client').value.toLowerCase();
+    const filterPay = document.getElementById('filter-payment').value;
+
+    // On filtre salesData selon le nom ET le mode de paiement
+    window.filteredSales = salesData.filter(s => {
+        const matchName = s.client.toLowerCase().includes(searchName);
+        const matchPay = (filterPay === 'all') || (s.payment === filterPay);
+        return matchName && matchPay;
+    });
+
+    renderTables(); // On redessine la table de caisse
+};
+
+// Fonction pour supprimer une vente
+window.deleteSale = async (id) => {
+    if (confirm("Supprimer cette vente définitivement ?")) {
+        await deleteDoc(doc(db, "sales", id));
+    }
+};
+
+// Fonction Export Excel
+window.exportToExcel = () => {
+    const table = document.querySelector("table");
+    const wb = XLSX.utils.table_to_book(table, { sheet: "Ventes" });
+    XLSX.writeFile(wb, `Rapport_Ventes_${new Date().toLocaleDateString()}.xlsx`);
+};
 
     // Table Stocks
     const stockTable = document.getElementById('stock-table');
@@ -116,7 +178,7 @@ function renderTables() {
                 <td><button onclick="deleteProduct('${p.id}')" style="color:red; border:none; background:none; cursor:pointer;">Supprimer</button></td>
             </tr>`).join('');
     }
-}
+// Fonction pour supprimer un produit du stock
 
 window.deleteProduct = async (id) => {
     if (confirm("Supprimer ce produit ?")) await deleteDoc(doc(db, "stock", id));
@@ -130,18 +192,40 @@ document.addEventListener('DOMContentLoaded', () => {
     const saleForm = document.getElementById('sale-form');
     if (saleForm) saleForm.addEventListener('submit', window.handleDashboardSale);
 
-    // Écoute des ventes
+    // Écoute des ventes (VERSION FUSIONNÉE : Dashboard + Stats)
     onSnapshot(query(collection(db, "sales"), orderBy("timestamp", "desc")), (snap) => {
         salesData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        
+        // 1. Mise à jour des tableaux (Admin et Caisse)
         renderTables();
         
-        // Mise à jour metrics Dashboard
+        // 2. Calculs pour les compteurs globaux (Page STATS)
+        const totalGlobal = salesData.reduce((sum, s) => sum + s.price, 0);
+        const totalCli = salesData.length;
+        
+        const grandTotalEl = document.getElementById('grand-total');
+        if (grandTotalEl) grandTotalEl.innerText = totalGlobal.toLocaleString() + " F";
+
+        const avgEl = document.getElementById('avg-client');
+        if (avgEl) {
+            const avg = totalCli > 0 ? (totalGlobal / totalCli) : 0;
+            avgEl.innerText = Math.round(avg).toLocaleString() + " F";
+        }
+
+        // 3. Calculs pour le Dashboard (Aujourd'hui uniquement)
         const today = new Date().toLocaleDateString('fr-FR');
         const todaySales = salesData.filter(s => s.date === today);
+        
         const revEl = document.getElementById('total-revenue');
         if (revEl) revEl.innerText = todaySales.reduce((sum, s) => sum + s.price, 0).toLocaleString() + " FCFA";
+        
         const cliEl = document.getElementById('total-clients');
         if (cliEl) cliEl.innerText = todaySales.length;
+
+        // 4. Lancement des graphiques Chart.js (Page STATS)
+        if (typeof updateCharts === "function") {
+            updateCharts();
+        }
     });
 
     // Écoute des stocks
@@ -229,7 +313,7 @@ window.ajouterAuPanier = (id) => {
         
         // Notification Wow au lieu d'un simple alert
         const toast = document.createElement('div');
-        toast.innerHTML = `✅ ${produit.name} ajouté !`;
+        toast.innerHTML = ` ${produit.name} ajouté !`;
         toast.style = "position:fixed; bottom:100px; right:20px; background:var(--gold); color:black; padding:15px 25px; border-radius:10px; font-weight:800; z-index:3000; animation: slideIn 0.5s forwards;";
         document.body.appendChild(toast);
         setTimeout(() => toast.remove(), 3000);
@@ -286,3 +370,76 @@ window.handleSecretClick = () => {
         alert("Code incorrect. Accès refusé.");
     }
 };
+let revenueChartInstance = null;
+let servicesChartInstance = null;
+
+function updateCharts() {
+    const ctxRev = document.getElementById('revenueChart');
+    const ctxServ = document.getElementById('servicesChart');
+    if (!ctxRev || !ctxServ) return;
+
+    // --- 1. Calcul des Revenus des 7 derniers jours ---
+    const last7Days = {};
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const dateStr = d.toLocaleDateString('fr-FR');
+        last7Days[dateStr] = 0;
+    }
+
+    salesData.forEach(s => {
+        if (last7Days[s.date] !== undefined) {
+            last7Days[s.date] += s.price;
+        }
+    });
+
+    // --- 2. Calcul du Top Services (Coiffures réalisées) ---
+    const serviceCounts = {};
+    salesData.forEach(s => {
+        // On compte chaque type de prestation
+        const serviceName = s.service || "Autre";
+        serviceCounts[serviceName] = (serviceCounts[serviceName] || 0) + 1;
+    });
+
+    // --- 3. Rendu du Graphique Linéaire (Évolution) ---
+    if (revenueChartInstance) revenueChartInstance.destroy();
+    revenueChartInstance = new Chart(ctxRev, {
+        type: 'line',
+        data: {
+            labels: Object.keys(last7Days),
+            datasets: [{
+                label: 'Chiffre d\'Affaires (F)',
+                data: Object.values(last7Days),
+                borderColor: '#c5a059', // Ton doré
+                backgroundColor: 'rgba(197, 160, 89, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } } }
+        }
+    });
+
+    // --- 4. Rendu du Graphique Camembert (Top Coiffures) ---
+    if (servicesChartInstance) servicesChartInstance.destroy();
+    servicesChartInstance = new Chart(ctxServ, {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(serviceCounts),
+            datasets: [{
+                data: Object.values(serviceCounts),
+                backgroundColor: ['#c5a059', '#2d3436', '#71717a', '#a1a1aa', '#1a1a1c'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'bottom', labels: { color: '#a1a1aa', padding: 20 } }
+            }
+        }
+    });
+}

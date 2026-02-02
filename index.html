@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hairtistique Barber | Boutique & Salon de Prestige</title>
+    <title>Hairtistic Barber | Boutique & Salon de Prestige</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root { 
@@ -49,7 +50,6 @@
         .container-boutique { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
         #product-list-client { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px; }
 
-        /* Style des cartes produits */
         .product-card-luxe {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -71,15 +71,25 @@
         .main-footer { background: rgba(0, 0, 0, 0.4); padding: 60px 20px 30px; border-top: 1px solid rgba(255,255,255,0.05); }
         .footer-grid { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 40px; }
 
+        /* Style spécifique pour les réseaux sociaux */
+        .social-links { display: flex; gap: 15px; margin-top: 15px; }
+        .social-links a { 
+            color: white; font-size: 1.3rem; transition: 0.3s; 
+            width: 40px; height: 40px; background: rgba(255,255,255,0.05); 
+            display: flex; align-items: center; justify-content: center; border-radius: 50%;
+            text-decoration: none;
+        }
+        .social-links a:hover { color: var(--gold); background: rgba(255,255,255,0.1); transform: translateY(-3px); }
+
         .cart-status { position: fixed; bottom: 25px; right: 25px; background: var(--gold); color: black; padding: 15px 25px; border-radius: 50px; font-weight: 800; cursor: pointer; z-index: 2000; box-shadow: 0 10px 25px rgba(0,0,0,0.4); }
 
-        /* MODAL LUXE STYLE */
         .modal { display:none; position:fixed; z-index:3000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.85); backdrop-filter:blur(8px); overflow-y:auto; }
         .modal-content { max-width:500px; margin:50px auto; background:#1a1a1c; border-radius:25px; border:1px solid rgba(255,255,255,0.1); overflow:hidden; position:relative; }
 
         @media (max-width: 768px) {
             .salon-grid { grid-template-columns: 1fr; }
             .footer-grid { grid-template-columns: 1fr; text-align: center; }
+            .social-links { justify-content: center; }
             #product-list-client { grid-template-columns: repeat(2, 1fr); }
         }
     </style>
@@ -91,7 +101,7 @@
     </div>
 
     <header class="header-luxe">
-        <h1 class="logo-text">HAIRTISTIQUE<span class="secret-trigger" onclick="handleSecretClick()"></span>BARBERSHOP</h1>
+        <h1 class="logo-text">HAIRTISTIC<span class="secret-trigger" onclick="handleSecretClick()"></span>BARBERSHOP</h1>
     </header>
 
     <section class="hero-prestige">
@@ -110,34 +120,69 @@
         <img src="image/Salon2.jfif" class="salon-img">
         <img src="image/Salon3.jfif" class="salon-img">
         <img src="image/Salon4.jfif" class="salon-img">
+        
     </section>
 
     <h2 class="section-title">Réalisations<span>Précision & Style</span></h2>
     <div class="gallery-scroll">
-        <img src="image/faded.jfif" class="gallery-item">
-        <img src="image/barbe.jfif" class="gallery-item">
-        <img src="image/Tayc en Rosyne.jfif" class="gallery-item">
-        <img src="image/coupe.jfif" class="gallery-item">
+        <img src="image/Realisation1.jfif" class="gallery-item">
+        <img src="image/Realisations0.jfif" class="gallery-item">
+        <img src="image/Realisations2.jfif" class="gallery-item">
+        <img src="image/Realisations3.jfif" class="gallery-item">
+        <img src="image/Realisations4.jfif" class="gallery-item">
+        <img src="image/R5.jfif" class="gallery-item">
+        <img src="image/R6.jfif" class="gallery-item">
+        <img src="image/R7.jfif" class="gallery-item">
     </div>
 
     <h2 class="section-title">Nous trouver<span>Adidogomé, Lomé</span></h2>
     <div style="max-width:1100px; margin: 0 auto 80px; padding:0 20px;">
         <div class="map-box">
-            <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3966.521260322283!2d1.1633333!3d6.1955556!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNsKwMTEnNDQuMCJOIDHCsDA5JzQ4LjAiRQ!5e0!3m2!1sfr!2stg!4v1645454545454" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+            <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3966.521257329412!2d1.1408412758832128!3d6.202874493784964!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x1021592a1da5cab5%3A0xd1c1ef5a46d35db1!2sHairtistic%20Barbershop!5e0!3m2!1sfr!2stg!4v1700000000000!5m2!1sfr!2stg" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
         </div>
     </div>
 
     <footer class="main-footer">
         <div class="footer-grid">
-            <div><h3>HAIRTISTIQUE</h3><p>Le temple de l'élégance masculine à Lomé.</p></div>
-            <div><h4>Horaires</h4><p>Lun - Sam: 09h - 21h</p></div>
-            <div><h4>Contact</h4><p>📞 +228 90 00 00 00</p></div>
+            <div>
+                <h3>HAIRTISTIC</h3>
+                <p style="color: #a1a1aa; font-size: 0.9rem;">Le temple de l'élégance masculine à Lomé. Coiffure et soins de haute précision.</p>
+            </div>
+            <div>
+                <h4>Horaires</h4>
+                <p style="color: #a1a1aa; font-size: 0.9rem;">Lun - Sam: 09h - 21h<br>Dimanche: Fermé</p>
+            </div>
+            <div>
+                <h4>Contact & Suivez-nous</h4>
+                <p style="color: #a1a1aa; font-size: 0.9rem; margin-bottom: 10px;">
+                    <i class="fas fa-phone-alt" style="color: var(--gold); margin-right: 8px;"></i> +228 93 70 19 43
+                </p>
+                
+                <div class="social-links">
+                    <a href="https://www.instagram.com/hairtistic_barbershop?igsh=a3FkNml6NHpzZHcx" target="_blank">
+                         <i class="fab fa-instagram"></i>
+                    </a>
+    
+                     <a href="https://www.tiktok.com/@hairtistic_barbershop?_r=1&_t=ZS-93ZzzOItowM" target="_blank">
+                        <i class="fab fa-tiktok"></i>
+                    </a>
+
+    
+                    <a href="https://snapchat.com/t/cTr2NTvu" target="_blank">
+                         <i class="fab fa-snapchat"></i>
+                    </a>
+    
+                    <a href="https://wa.me/22893701943" target="_blank">
+                        <i class="fab fa-whatsapp"></i>
+                     </a>
+                </div>
+            </div>
         </div>
     </footer>
 
     <div id="modal-produit-detail" class="modal">
         <div class="modal-content">
-            <span onclick="toggleModal('modal-produit-detail')" style="position:absolute; top:15px; right:20px; color:white; font-size:30px; cursor:pointer; z-index:10;">&times;</span>
+            <span onclick="toggleModal('modal-produit-detail')" style="position:absolute; top:15px; right:20px; color:white; font-size:30px; cursor:pointer; z-index:10;">×</span>
             <div id="detail-content"></div>
         </div>
     </div>
@@ -146,7 +191,7 @@
         <div class="modal-content" style="padding:30px; color:white;">
             <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
                 <h2 style="margin:0; color:var(--gold);">Mon Panier</h2>
-                <span onclick="toggleModal('modal-panier')" style="font-size:30px; cursor:pointer;">&times;</span>
+                <span onclick="toggleModal('modal-panier')" style="font-size:30px; cursor:pointer;">×</span>
             </div>
             <div id="cart-items-list"></div>
             <div style="margin-top:20px; border-top:1px solid rgba(255,255,255,0.1); padding-top:20px;">

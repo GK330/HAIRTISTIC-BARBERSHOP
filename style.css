@@ -177,3 +177,10 @@ td { padding: 22px 20px; border-bottom: 1px solid #f8f8f8; font-weight: 600; fon
       gap: 15px;
     }
 }
+.badge {
+    background: #f0f0f0;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
