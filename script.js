@@ -17,7 +17,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const auth = getAuth(app); // Activation de l'authentification
+const auth = getAuth(app); 
 
 // Variables Globales
 let salesData = [];
@@ -30,7 +30,6 @@ let expensesData = [];
 // 2. SÉCURITÉ & AUTHENTIFICATION
 // ==========================================
 
-// Protection des pages d'administration
 const currentPage = window.location.pathname;
 const isAdminPage = currentPage.includes('Dashboard.html') || 
                     currentPage.includes('caisse.html') || 
@@ -38,18 +37,14 @@ const isAdminPage = currentPage.includes('Dashboard.html') ||
                     currentPage.includes('stats.html') || 
                     currentPage.includes('clients.html');
 
-// Firebase écoute en direct si quelqu'un est connecté
 onAuthStateChanged(auth, (user) => {
     if (isAdminPage && !user) {
-        // Si on est sur une page admin sans être connecté -> redirection vers login
         window.location.href = "login.html";
     } else if (user && currentPage.includes('login.html')) {
-        // Si on est déjà connecté et qu'on va sur login.html -> redirection vers Dashboard
         window.location.href = "Dashboard.html";
     }
 });
 
-// Fonction de déconnexion
 window.logoutAdmin = () => {
     signOut(auth).then(() => {
         window.location.href = "login.html";
@@ -64,7 +59,6 @@ window.toggleModal = (id) => {
     if (m) {
         m.style.display = (m.style.display === "block") ? "none" : "block";
 
-        // AUTO-REMPLISSAGE DATE ET HEURE (Coupe & Dépense)
         if ((id === 'modal-coupe' || id === 'modal-depense') && m.style.display === "block") {
             const now = new Date();
             const year = now.getFullYear();
@@ -163,21 +157,14 @@ window.handleDashboardSale = async (e) => {
 // ==========================================
 // 6. RENDU DES TABLES ADMIN (Dashboard & Caisse)
 // ==========================================
-function escapeHtml(text) {
-    if (text == null) return "";
-    return String(text).replace(/[&<>"']/g, function(m) {
-        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
-    });
-}
-
 function renderTables() {
     const homeTable = document.getElementById('home-sales-table');
     if (homeTable) {
         homeTable.innerHTML = salesData.slice(0, 5).map(s => `
             <tr>
                 <td>${s.time}</td>
-                <td>${escapeHtml(s.client)}</td>
-                <td>${escapeHtml(s.service)}</td>
+                <td>${s.client}</td>
+                <td>${s.service}</td>
                 <td><b>${s.price.toLocaleString()} F</b></td>
             </tr>`).join('');
     }
@@ -189,9 +176,9 @@ function renderTables() {
             <tr>
                 <td>${s.date}</td>
                 <td>${s.time}</td>
-                <td>${escapeHtml(s.client)}</td>
-                <td>${escapeHtml(s.service)}</td>
-                <td><span style="background:#eee; padding:4px 8px; border-radius:6px; font-size:0.8rem;">${escapeHtml(s.payment)}</span></td>
+                <td>${s.client}</td>
+                <td>${s.service}</td>
+                <td><span style="background:#eee; padding:4px 8px; border-radius:6px; font-size:0.8rem;">${s.payment}</span></td>
                 <td><b>${s.price.toLocaleString()} F</b></td>
                 <td>
                     <button onclick="deleteSale('${s.id}')" style="color:#ff4d4d; border:none; background:none; cursor:pointer; font-weight:bold;">Supprimer</button>
@@ -205,7 +192,6 @@ function renderTables() {
             <tr>
                 <td><img src="${p.image}" style="width:40px; height:40px; border-radius:5px; object-fit:cover;"></td>
                 <td>${p.name}</td>
-                <td>${escapeHtml(p.name)}</td>
                 <td>${p.price.toLocaleString()} F</td>
                 <td>${p.quantity}</td>
                 <td><button onclick="deleteProduct('${p.id}')" style="color:red; border:none; background:none; cursor:pointer;">Supprimer</button></td>
@@ -268,11 +254,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Formulaire Dashboard (Vente)
     const saleForm = document.getElementById('sale-form');
     if (saleForm) saleForm.addEventListener('submit', window.handleDashboardSale);
 
-    // Formulaire Ajout Stock
     const productForm = document.getElementById('product-form');
     if (productForm) {
         productForm.addEventListener('submit', async (e) => {
@@ -299,7 +283,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Formulaire Ajout Client
     const clientAddForm = document.getElementById('client-add-form');
     if (clientAddForm) {
         clientAddForm.addEventListener('submit', async (e) => {
@@ -319,7 +302,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Formulaire Ajout Dépense
     const expenseForm = document.getElementById('expense-form');
     if (expenseForm) {
         expenseForm.addEventListener('submit', async (e) => {
@@ -399,7 +381,6 @@ function renderClientProducts() {
                     <img src="${p.image}" style="width:100%; height:100%; object-fit:cover;" alt="${p.name}">
                 </div>
                 <h4 style="margin: 10px 0 5px 0; font-size: 1rem; color: white;">${p.name}</h4>
-                <h4 style="margin: 10px 0 5px 0; font-size: 1rem; color: white;">${escapeHtml(p.name)}</h4>
                 <div style="color: var(--gold); font-weight: 800; font-size: 1.1rem;">${p.price.toLocaleString()} F</div>
                 <button style="margin-top: 10px; background: transparent; border: 1px solid var(--gold); color: var(--gold); padding: 5px 15px; border-radius: 20px; font-size: 0.8rem; cursor: pointer;">
                     Voir détails
@@ -420,8 +401,6 @@ window.ouvrirDetailProduit = (id) => {
                 <div style="padding:25px;">
                     <h2 style="margin:0 0 10px 0; color: white; font-weight: 800;">${produit.name}</h2>
                     <p style="color:#a1a1aa; margin-bottom:20px; line-height:1.6;">${produit.description || 'Produit de qualité supérieure.'}</p>
-                    <h2 style="margin:0 0 10px 0; color: white; font-weight: 800;">${escapeHtml(produit.name)}</h2>
-                    <p style="color:#a1a1aa; margin-bottom:20px; line-height:1.6;">${escapeHtml(produit.description) || 'Produit de qualité supérieure.'}</p>
                     
                     <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
                         <div>
@@ -495,7 +474,6 @@ function renderPanier() {
                         <img src="${item.image}" style="width:50px; height:50px; border-radius:8px; object-fit:cover;">
                         <div>
                             <strong style="display:block; color:white; font-size:0.9rem;">${item.name}</strong>
-                            <strong style="display:block; color:white; font-size:0.9rem;">${escapeHtml(item.name)}</strong>
                             <small style="color:var(--gold);">${item.qte} x ${item.price.toLocaleString()} F</small>
                         </div>
                     </div>
@@ -555,9 +533,9 @@ window.finaliserCommande = () => {
 // 9. ACCÈS ADMIN & CHARTS
 // ==========================================
 
-// Le bouton secret sur la page client (index.html) redirige vers login
+// CORRECTION ICI : Retour en arrière d'un dossier pour trouver admin/login.html
 window.handleSecretClick = () => {
-    window.location.href = "admin/login.html"; 
+    window.location.href = "../admin/login.html"; 
 };
 
 let revenueChartInstance = null;
@@ -644,10 +622,6 @@ window.renderClientsTable = () => {
             <td>${c.sexe}</td>
             <td>${c.numero}</td>
             <td>${c.quartier}</td>
-            <td style="font-weight: bold;">${escapeHtml(c.nom)}</td>
-            <td>${escapeHtml(c.sexe)}</td>
-            <td>${escapeHtml(c.numero)}</td>
-            <td>${escapeHtml(c.quartier)}</td>
             <td>
                 <button onclick="deleteClient('${c.id}')" style="color:#ff4d4d; border:none; background:none; cursor:pointer; font-weight:bold;">Supprimer</button>
             </td>
