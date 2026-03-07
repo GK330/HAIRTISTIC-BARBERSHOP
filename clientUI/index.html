@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hairtistic Barber | Boutique & Salon de Prestige</title>
-    <link rel="stylesheet" href="style.css">
+    
+    <link rel="stylesheet" href="../style.css">
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -38,7 +40,8 @@
 
         .hero-prestige {
             height: 60vh;
-            background: linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.7)), url('image/background.jpeg');
+            /* Chemin de l'image de fond corrigé */
+            background: linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.7)), url('../image/background.jpeg');
             background-size: cover; background-position: top;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             text-align: center; padding: 0 20px;
@@ -71,7 +74,6 @@
         .main-footer { background: rgba(0, 0, 0, 0.4); padding: 60px 20px 30px; border-top: 1px solid rgba(255,255,255,0.05); }
         .footer-grid { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 40px; }
 
-        /* Style spécifique pour les réseaux sociaux */
         .social-links { display: flex; gap: 15px; margin-top: 15px; }
         .social-links a { 
             color: white; font-size: 1.3rem; transition: 0.3s; 
@@ -116,23 +118,22 @@
 
     <h2 class="section-title">Le Salon<span>Votre Sanctuaire</span></h2>
     <section class="salon-grid">
-        <img src="image/Salon1.jfif" class="salon-img">
-        <img src="image/Salon2.jfif" class="salon-img">
-        <img src="image/Salon3.jfif" class="salon-img">
-        <img src="image/Salon4.jfif" class="salon-img">
-        
+        <img src="../image/Salon1.jfif" class="salon-img">
+        <img src="../image/Salon2.jfif" class="salon-img">
+        <img src="../image/Salon3.jfif" class="salon-img">
+        <img src="../image/Salon4.jfif" class="salon-img">
     </section>
 
     <h2 class="section-title">Réalisations<span>Précision & Style</span></h2>
     <div class="gallery-scroll">
-        <img src="image/Realisation1.jfif" class="gallery-item">
-        <img src="image/Realisations0.jfif" class="gallery-item">
-        <img src="image/Realisations2.jfif" class="gallery-item">
-        <img src="image/Realisations3.jfif" class="gallery-item">
-        <img src="image/Realisations4.jfif" class="gallery-item">
-        <img src="image/R5.jfif" class="gallery-item">
-        <img src="image/R6.jfif" class="gallery-item">
-        <img src="image/R7.jfif" class="gallery-item">
+        <img src="../image/Realisation1.jfif" class="gallery-item">
+        <img src="../image/Realisations0.jfif" class="gallery-item">
+        <img src="../image/Realisations2.jfif" class="gallery-item">
+        <img src="../image/Realisations3.jfif" class="gallery-item">
+        <img src="../image/Realisations4.jfif" class="gallery-item">
+        <img src="../image/R5.jfif" class="gallery-item">
+        <img src="../image/R6.jfif" class="gallery-item">
+        <img src="../image/R7.jfif" class="gallery-item">
     </div>
 
     <h2 class="section-title">Nous trouver<span>Adidogomé, Lomé</span></h2>
@@ -193,14 +194,31 @@
                 <h2 style="margin:0; color:var(--gold);">Mon Panier</h2>
                 <span onclick="toggleModal('modal-panier')" style="font-size:30px; cursor:pointer;">×</span>
             </div>
-            <div id="cart-items-list"></div>
+            
+            <div id="cart-items-list" style="max-height: 200px; overflow-y: auto; margin-bottom: 20px;"></div>
+            
+            <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px; margin-top: 15px;">
+                <h3 style="margin-top: 0; margin-bottom: 15px; font-size: 1.1rem; color: #a1a1aa;">Vos informations</h3>
+                
+                <input type="text" id="client-nom" placeholder="Nom complet" 
+                    style="width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: #000; color: white; outline: none;">
+                
+                <input type="tel" id="client-tel" placeholder="Numéro de téléphone (ex: 90 00 00 00)" 
+                    style="width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: #000; color: white; outline: none;">
+                
+                <input type="text" id="client-loc" placeholder="Localisation (Quartier)" 
+                    style="width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: #000; color: white; outline: none;">
+            </div>
+
             <div style="margin-top:20px; border-top:1px solid rgba(255,255,255,0.1); padding-top:20px;">
-                <h3 style="display:flex; justify-content:space-between;">Total: <span id="cart-total-price">0</span> F</h3>
-                <button onclick="finaliserCommande()" style="width:100%; background:var(--gold); color:black; border:none; padding:15px; border-radius:15px; font-weight:800; cursor:pointer; margin-top:10px;">COMMANDER SUR WHATSAPP</button>
+                <h3 style="display:flex; justify-content:space-between; font-size: 1.3rem;">Total: <span id="cart-total-price">0</span> F</h3>
+                <button onclick="finaliserCommande()" style="width:100%; background:var(--gold); color:black; border:none; padding:15px; border-radius:15px; font-weight:800; cursor:pointer; margin-top:10px; transition: 0.3s;">
+                    COMMANDER SUR WHATSAPP
+                </button>
             </div>
         </div>
     </div>
 
-    <script type="module" src="script.js"></script>
+    <script type="module" src="../script.js"></script>
 </body>
 </html>

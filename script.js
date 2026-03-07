@@ -1,7 +1,10 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
+// ==========================================
 // 1. CONFIGURATION FIREBASE
+// ==========================================
 const firebaseConfig = {
     apiKey: "AIzaSyBN6FZF8IsUVxR9MZLFP14Rr-MAZ6hVvzQ",
     authDomain: "hairtisticbarber.firebaseapp.com",
@@ -14,15 +17,70 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app); // Activation de l'authentification
 
+// Variables Globales
 let salesData = [];
 let stockData = [];
 let panier = [];
+let clientsData = [];
+let expensesData = []; 
 
-// 2. FONCTIONS GLOBALES (Accessibles depuis le HTML)
+// ==========================================
+// 2. SÉCURITÉ & AUTHENTIFICATION
+// ==========================================
+
+// Protection des pages d'administration
+const currentPage = window.location.pathname;
+const isAdminPage = currentPage.includes('Dashboard.html') || 
+                    currentPage.includes('caisse.html') || 
+                    currentPage.includes('stocks.html') || 
+                    currentPage.includes('stats.html') || 
+                    currentPage.includes('clients.html');
+
+// Firebase écoute en direct si quelqu'un est connecté
+onAuthStateChanged(auth, (user) => {
+    if (isAdminPage && !user) {
+        // Si on est sur une page admin sans être connecté -> redirection vers login
+        window.location.href = "login.html";
+    } else if (user && currentPage.includes('login.html')) {
+        // Si on est déjà connecté et qu'on va sur login.html -> redirection vers Dashboard
+        window.location.href = "Dashboard.html";
+    }
+});
+
+// Fonction de déconnexion
+window.logoutAdmin = () => {
+    signOut(auth).then(() => {
+        window.location.href = "login.html";
+    });
+};
+
+// ==========================================
+// 3. FONCTIONS UI & GLOBALES
+// ==========================================
 window.toggleModal = (id) => {
     const m = document.getElementById(id);
-    if (m) m.style.display = (m.style.display === "block") ? "none" : "block";
+    if (m) {
+        m.style.display = (m.style.display === "block") ? "none" : "block";
+
+        // AUTO-REMPLISSAGE DATE ET HEURE (Coupe & Dépense)
+        if ((id === 'modal-coupe' || id === 'modal-depense') && m.style.display === "block") {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            
+            const dateInput = document.getElementById(id === 'modal-coupe' ? 'date-input' : 'exp-date');
+            if(dateInput) dateInput.value = `${year}-${month}-${day}`;
+            
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            
+            const timeInput = document.getElementById(id === 'modal-coupe' ? 'time-input' : 'exp-time');
+            if(timeInput) timeInput.value = `${hours}:${minutes}`;
+        }
+    }
 };
 
 window.toggleSidebar = () => {
@@ -32,7 +90,6 @@ window.toggleSidebar = () => {
     if (backdrop) backdrop.style.display = (backdrop.style.display === "block") ? "none" : "block";
 };
 
-// Gestion de la date en direct
 function updateLiveDate() {
     const dateEl = document.getElementById('live-date');
     if (dateEl) {
@@ -41,11 +98,51 @@ function updateLiveDate() {
     }
 }
 
-// 3. GESTION DES PRESTATIONS (ADMIN)
+// ==========================================
+// 4. BUSINESS INTELLIGENCE (STATS GLOBALES)
+// ==========================================
+window.updateGlobalStats = () => {
+    const totalCA = salesData.reduce((sum, s) => sum + s.price, 0);
+    const caEl = document.getElementById('grand-total');
+    if (caEl) caEl.innerText = totalCA.toLocaleString() + " F";
+
+    const totalExp = expensesData.reduce((sum, e) => sum + e.amount, 0);
+    const expEl = document.getElementById('total-expenses');
+    if (expEl) expEl.innerText = totalExp.toLocaleString() + " F";
+
+    const net = totalCA - totalExp;
+    const netEl = document.getElementById('net-profit');
+    if (netEl) {
+        netEl.innerText = net.toLocaleString() + " F";
+        netEl.style.color = net >= 0 ? "#4ade80" : "#ff4d4d"; 
+    }
+
+    const cliCountEl = document.getElementById('stat-clients-count');
+    if (cliCountEl) cliCountEl.innerText = clientsData.length;
+
+    const prodCountEl = document.getElementById('stat-products-count');
+    if (prodCountEl) prodCountEl.innerText = stockData.length;
+
+    const avgEl = document.getElementById('avg-client');
+    if (avgEl) {
+        const avg = salesData.length > 0 ? (totalCA / salesData.length) : 0;
+        avgEl.innerText = Math.round(avg).toLocaleString() + " F";
+    }
+};
+
+// ==========================================
+// 5. GESTION DES PRESTATIONS (ADMIN)
+// ==========================================
 window.handleDashboardSale = async (e) => {
     e.preventDefault();
     const clientName = document.getElementById('client-name').value || "Client Passant";
     const priceValue = parseInt(document.getElementById('price-input').value);
+    
+    const rawDate = document.getElementById('date-input').value; 
+    const rawTime = document.getElementById('time-input').value; 
+    const [year, month, day] = rawDate.split('-');
+    const formattedDate = `${day}/${month}/${year}`;
+    const finalTimestamp = new Date(`${rawDate}T${rawTime}`);
 
     try {
         await addDoc(collection(db, "sales"), {
@@ -54,69 +151,47 @@ window.handleDashboardSale = async (e) => {
             price: priceValue,
             payment: document.getElementById('payment-method').value,
             status: "Payé",
-            date: new Date().toLocaleDateString('fr-FR'),
-            time: new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}),
-            timestamp: new Date()
+            date: formattedDate, 
+            time: rawTime,       
+            timestamp: finalTimestamp 
         });
         window.toggleModal('modal-coupe');
         e.target.reset();
     } catch (err) { alert("Erreur : " + err.message); }
 };
 
-// 4. GESTION DES STOCKS (IMAGES EN BASE64)
-const productForm = document.getElementById('product-form');
-if (productForm) {
-    productForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const file = document.getElementById('prod-image').files[0];
-        const reader = new FileReader();
-
-        reader.onloadend = async () => {
-            try {
-                await addDoc(collection(db, "stock"), {
-                    name: document.getElementById('prod-name').value,
-                    description: document.getElementById('prod-desc').value,
-                    price: parseInt(document.getElementById('prod-price').value),
-                    quantity: parseInt(document.getElementById('prod-qty').value),
-                    image: reader.result,
-                    timestamp: new Date()
-                });
-                alert("Produit ajouté au catalogue !");
-                window.toggleModal('modal-produit');
-                productForm.reset();
-            } catch (err) { alert("Erreur : " + err.message); }
-        };
-        if (file) reader.readAsDataURL(file);
+// ==========================================
+// 6. RENDU DES TABLES ADMIN (Dashboard & Caisse)
+// ==========================================
+function escapeHtml(text) {
+    if (text == null) return "";
+    return String(text).replace(/[&<>"']/g, function(m) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
     });
 }
 
-// 5. RENDU DES TABLES (Sécurisé)
 function renderTables() {
-    // 1. Table Dashboard (Affiche seulement les 5 derniers)
     const homeTable = document.getElementById('home-sales-table');
     if (homeTable) {
         homeTable.innerHTML = salesData.slice(0, 5).map(s => `
             <tr>
                 <td>${s.time}</td>
-                <td>${s.client}</td>
-                <td>${s.service}</td>
+                <td>${escapeHtml(s.client)}</td>
+                <td>${escapeHtml(s.service)}</td>
                 <td><b>${s.price.toLocaleString()} F</b></td>
             </tr>`).join('');
     }
 
-    // 2. Table Caisse (Affiche TOUT avec filtres et bouton supprimer)
     const fullTable = document.getElementById('full-sales-table');
     if (fullTable) {
-        // On utilise les données filtrées si elles existent, sinon on prend tout
         const dataToDisplay = window.filteredSales || salesData;
-
         fullTable.innerHTML = dataToDisplay.map(s => `
             <tr>
                 <td>${s.date}</td>
                 <td>${s.time}</td>
-                <td>${s.client}</td>
-                <td>${s.service}</td>
-                <td><span style="background:#eee; padding:4px 8px; border-radius:6px; font-size:0.8rem;">${s.payment}</span></td>
+                <td>${escapeHtml(s.client)}</td>
+                <td>${escapeHtml(s.service)}</td>
+                <td><span style="background:#eee; padding:4px 8px; border-radius:6px; font-size:0.8rem;">${escapeHtml(s.payment)}</span></td>
                 <td><b>${s.price.toLocaleString()} F</b></td>
                 <td>
                     <button onclick="deleteSale('${s.id}')" style="color:#ff4d4d; border:none; background:none; cursor:pointer; font-weight:bold;">Supprimer</button>
@@ -124,122 +199,197 @@ function renderTables() {
             </tr>`).join('');
     }
 
-    // 3. Table Stocks (Garde ton code actuel)
     const stockTable = document.getElementById('stock-table');
     if (stockTable) {
         stockTable.innerHTML = stockData.map(p => `
             <tr>
                 <td><img src="${p.image}" style="width:40px; height:40px; border-radius:5px; object-fit:cover;"></td>
                 <td>${p.name}</td>
+                <td>${escapeHtml(p.name)}</td>
                 <td>${p.price.toLocaleString()} F</td>
                 <td>${p.quantity}</td>
                 <td><button onclick="deleteProduct('${p.id}')" style="color:red; border:none; background:none; cursor:pointer;">Supprimer</button></td>
             </tr>`).join('');
     }
 }
-// Fonction appelée par onkeyup dans ton HTML
+
 window.filterSales = () => {
     const searchName = document.getElementById('search-client').value.toLowerCase();
     const filterPay = document.getElementById('filter-payment').value;
 
-    // On filtre salesData selon le nom ET le mode de paiement
     window.filteredSales = salesData.filter(s => {
         const matchName = s.client.toLowerCase().includes(searchName);
         const matchPay = (filterPay === 'all') || (s.payment === filterPay);
         return matchName && matchPay;
     });
-
-    renderTables(); // On redessine la table de caisse
+    renderTables(); 
 };
 
-// Fonction pour supprimer une vente
 window.deleteSale = async (id) => {
     if (confirm("Supprimer cette vente définitivement ?")) {
         await deleteDoc(doc(db, "sales", id));
     }
 };
 
-// Fonction Export Excel
 window.exportToExcel = () => {
     const table = document.querySelector("table");
     const wb = XLSX.utils.table_to_book(table, { sheet: "Ventes" });
     XLSX.writeFile(wb, `Rapport_Ventes_${new Date().toLocaleDateString()}.xlsx`);
 };
 
-    // Table Stocks
-    const stockTable = document.getElementById('stock-table');
-    if (stockTable) {
-        stockTable.innerHTML = stockData.map(p => `
-            <tr>
-                <td><img src="${p.image}" style="width:40px; height:40px; border-radius:5px; object-fit:cover;"></td>
-                <td>${p.name}</td>
-                <td>${p.price.toLocaleString()} F</td>
-                <td>${p.quantity}</td>
-                <td><button onclick="deleteProduct('${p.id}')" style="color:red; border:none; background:none; cursor:pointer;">Supprimer</button></td>
-            </tr>`).join('');
-    }
-// Fonction pour supprimer un produit du stock
-
 window.deleteProduct = async (id) => {
     if (confirm("Supprimer ce produit ?")) await deleteDoc(doc(db, "stock", id));
 };
 
-// 6. INITIALISATION
+// ==========================================
+// 7. INITIALISATION & LISTENERS FIREBASE
+// ==========================================
 document.addEventListener('DOMContentLoaded', () => {
     updateLiveDate();
 
-    // Formulaire Dashboard
+    // Connexion Admin (login.html)
+    const loginForm = document.getElementById('login-form');
+    if (loginForm) {
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('admin-email').value;
+            const password = document.getElementById('admin-password').value;
+            const btn = loginForm.querySelector('button');
+            const originalText = btn.innerText;
+            btn.innerText = "Chargement...";
+
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                window.location.href = "Dashboard.html"; 
+            } catch (error) {
+                alert("Erreur de connexion : Identifiants incorrects.");
+                btn.innerText = originalText;
+            }
+        });
+    }
+
+    // Formulaire Dashboard (Vente)
     const saleForm = document.getElementById('sale-form');
     if (saleForm) saleForm.addEventListener('submit', window.handleDashboardSale);
 
-    // Écoute des ventes (VERSION FUSIONNÉE : Dashboard + Stats)
+    // Formulaire Ajout Stock
+    const productForm = document.getElementById('product-form');
+    if (productForm) {
+        productForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const file = document.getElementById('prod-image').files[0];
+            const reader = new FileReader();
+
+            reader.onloadend = async () => {
+                try {
+                    await addDoc(collection(db, "stock"), {
+                        name: document.getElementById('prod-name').value,
+                        description: document.getElementById('prod-desc').value,
+                        price: parseInt(document.getElementById('prod-price').value),
+                        quantity: parseInt(document.getElementById('prod-qty').value),
+                        image: reader.result,
+                        timestamp: new Date()
+                    });
+                    alert("Produit ajouté au catalogue !");
+                    window.toggleModal('modal-produit');
+                    productForm.reset();
+                } catch (err) { alert("Erreur : " + err.message); }
+            };
+            if (file) reader.readAsDataURL(file);
+        });
+    }
+
+    // Formulaire Ajout Client
+    const clientAddForm = document.getElementById('client-add-form');
+    if (clientAddForm) {
+        clientAddForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            try {
+                await addDoc(collection(db, "clients"), {
+                    nom: document.getElementById('new-client-name').value,
+                    sexe: document.getElementById('new-client-sex').value,
+                    numero: document.getElementById('new-client-phone').value,
+                    quartier: document.getElementById('new-client-loc').value,
+                    timestamp: new Date()
+                });
+                alert("Client ajouté avec succès !");
+                window.toggleModal('modal-add-client');
+                clientAddForm.reset();
+            } catch (err) { alert("Erreur : " + err.message); }
+        });
+    }
+
+    // Formulaire Ajout Dépense
+    const expenseForm = document.getElementById('expense-form');
+    if (expenseForm) {
+        expenseForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const rawDate = document.getElementById('exp-date').value;
+            const rawTime = document.getElementById('exp-time').value;
+            const [year, month, day] = rawDate.split('-');
+            
+            try {
+                await addDoc(collection(db, "expenses"), {
+                    description: document.getElementById('exp-desc').value,
+                    category: document.getElementById('exp-category').value,
+                    amount: parseInt(document.getElementById('exp-amount').value),
+                    date: `${day}/${month}/${year}`,
+                    time: rawTime,
+                    timestamp: new Date(`${rawDate}T${rawTime}`)
+                });
+                alert("Dépense enregistrée !");
+                window.toggleModal('modal-depense');
+                expenseForm.reset();
+            } catch (err) { alert("Erreur : " + err.message); }
+        });
+    }
+
+    // --- ECOUTES BASE DE DONNÉES (REALTIME) ---
     onSnapshot(query(collection(db, "sales"), orderBy("timestamp", "desc")), (snap) => {
         salesData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        
-        // 1. Mise à jour des tableaux (Admin et Caisse)
         renderTables();
+        window.updateGlobalStats();
         
-        // 2. Calculs pour les compteurs globaux (Page STATS)
-        const totalGlobal = salesData.reduce((sum, s) => sum + s.price, 0);
-        const totalCli = salesData.length;
-        
-        const grandTotalEl = document.getElementById('grand-total');
-        if (grandTotalEl) grandTotalEl.innerText = totalGlobal.toLocaleString() + " F";
-
-        const avgEl = document.getElementById('avg-client');
-        if (avgEl) {
-            const avg = totalCli > 0 ? (totalGlobal / totalCli) : 0;
-            avgEl.innerText = Math.round(avg).toLocaleString() + " F";
-        }
-
-        // 3. Calculs pour le Dashboard (Aujourd'hui uniquement)
         const today = new Date().toLocaleDateString('fr-FR');
         const todaySales = salesData.filter(s => s.date === today);
-        
         const revEl = document.getElementById('total-revenue');
         if (revEl) revEl.innerText = todaySales.reduce((sum, s) => sum + s.price, 0).toLocaleString() + " FCFA";
-        
         const cliEl = document.getElementById('total-clients');
         if (cliEl) cliEl.innerText = todaySales.length;
 
-        // 4. Lancement des graphiques Chart.js (Page STATS)
-        if (typeof updateCharts === "function") {
-            updateCharts();
-        }
+        if (typeof updateCharts === "function") updateCharts();
     });
 
-    // Écoute des stocks
-// Écoute des stocks
     onSnapshot(collection(db, "stock"), (snap) => {
         stockData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        renderTables(); // Pour l'admin
-        renderClientProducts(); // AJOUTE CETTE LIGNE pour le client
+        renderTables(); 
+        if (typeof renderClientProducts === "function") renderClientProducts(); 
         
         const lowEl = document.getElementById('low-stock-count');
         if (lowEl) lowEl.innerText = stockData.filter(p => p.quantity < 5).length;
+        window.updateGlobalStats();
+    });
+
+    onSnapshot(query(collection(db, "clients"), orderBy("timestamp", "desc")), (snap) => {
+        clientsData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        if (typeof window.renderClientsTable === "function") window.renderClientsTable();
+
+        const datalist = document.getElementById('clients-datalist');
+        if (datalist) {
+            datalist.innerHTML = clientsData.map(c => `<option value="${c.nom}">`).join('');
+        }
+        window.updateGlobalStats();
+    });
+
+    onSnapshot(collection(db, "expenses"), (snap) => {
+        expensesData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        window.updateGlobalStats();
     });
 });
-// Fonction pour afficher les produits côté CLIENT (dans produit.html)
+
+// ==========================================
+// 8. FONCTIONS CÔTÉ CLIENT (BOUTIQUE / PANIER)
+// ==========================================
 function renderClientProducts() {
     const grid = document.getElementById('product-list-client');
     if (grid && stockData) {
@@ -249,6 +399,7 @@ function renderClientProducts() {
                     <img src="${p.image}" style="width:100%; height:100%; object-fit:cover;" alt="${p.name}">
                 </div>
                 <h4 style="margin: 10px 0 5px 0; font-size: 1rem; color: white;">${p.name}</h4>
+                <h4 style="margin: 10px 0 5px 0; font-size: 1rem; color: white;">${escapeHtml(p.name)}</h4>
                 <div style="color: var(--gold); font-weight: 800; font-size: 1.1rem;">${p.price.toLocaleString()} F</div>
                 <button style="margin-top: 10px; background: transparent; border: 1px solid var(--gold); color: var(--gold); padding: 5px 15px; border-radius: 20px; font-size: 0.8rem; cursor: pointer;">
                     Voir détails
@@ -257,7 +408,7 @@ function renderClientProducts() {
         `).join('');
     }
 }
-// Ouvre le détail du produit (Version Luxe)
+
 window.ouvrirDetailProduit = (id) => {
     const produit = stockData.find(p => p.id === id);
     const detailContent = document.getElementById('detail-content');
@@ -268,7 +419,9 @@ window.ouvrirDetailProduit = (id) => {
                 <img src="${produit.image}" style="width:100%; height:300px; object-fit:cover;">
                 <div style="padding:25px;">
                     <h2 style="margin:0 0 10px 0; color: white; font-weight: 800;">${produit.name}</h2>
-                    <p style="color:#a1a1aa; margin-bottom:20px; line-height:1.6;">${produit.description || 'Produit de qualité supérieure sélectionné par Hairtistique.'}</p>
+                    <p style="color:#a1a1aa; margin-bottom:20px; line-height:1.6;">${produit.description || 'Produit de qualité supérieure.'}</p>
+                    <h2 style="margin:0 0 10px 0; color: white; font-weight: 800;">${escapeHtml(produit.name)}</h2>
+                    <p style="color:#a1a1aa; margin-bottom:20px; line-height:1.6;">${escapeHtml(produit.description) || 'Produit de qualité supérieure.'}</p>
                     
                     <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
                         <div>
@@ -293,14 +446,12 @@ window.ouvrirDetailProduit = (id) => {
     }
 };
 
-// Gère le panier (Version Luxe)
 window.ajouterAuPanier = (id) => {
     const produit = stockData.find(p => p.id === id);
     const qteInput = document.getElementById('qte-achat');
     const qte = parseInt(qteInput?.value || 1);
 
     if (produit) {
-        // Vérifier si le produit est déjà dans le panier pour ne pas faire de doublons
         const indexExistant = panier.findIndex(item => item.id === id);
         if (indexExistant > -1) {
             panier[indexExistant].qte += qte;
@@ -311,7 +462,6 @@ window.ajouterAuPanier = (id) => {
         window.toggleModal('modal-produit-detail');
         document.getElementById('cart-count').innerText = panier.length;
         
-        // Notification Wow au lieu d'un simple alert
         const toast = document.createElement('div');
         toast.innerHTML = ` ${produit.name} ajouté !`;
         toast.style = "position:fixed; bottom:100px; right:20px; background:var(--gold); color:black; padding:15px 25px; border-radius:10px; font-weight:800; z-index:3000; animation: slideIn 0.5s forwards;";
@@ -320,6 +470,12 @@ window.ajouterAuPanier = (id) => {
 
         renderPanier();
     }
+};
+
+window.retirerDuPanier = (index) => {
+    panier.splice(index, 1); 
+    document.getElementById('cart-count').innerText = panier.length; 
+    renderPanier(); 
 };
 
 function renderPanier() {
@@ -339,6 +495,7 @@ function renderPanier() {
                         <img src="${item.image}" style="width:50px; height:50px; border-radius:8px; object-fit:cover;">
                         <div>
                             <strong style="display:block; color:white; font-size:0.9rem;">${item.name}</strong>
+                            <strong style="display:block; color:white; font-size:0.9rem;">${escapeHtml(item.name)}</strong>
                             <small style="color:var(--gold);">${item.qte} x ${item.price.toLocaleString()} F</small>
                         </div>
                     </div>
@@ -347,29 +504,62 @@ function renderPanier() {
             `;
         }).join('');
     }
-    totalEl.innerText = total.toLocaleString();
+    if(totalEl) totalEl.innerText = total.toLocaleString();
 }
 
-// renderClientProducts();
-window.handleSecretClick = () => {
-    // 1. On récupère l'heure actuelle (0-23)
-    const now = new Date();
-    const currentHour = now.getHours(); 
-
-    // 2. On définit la logique du mot de passe (Ex: HB + l'heure)
-    // Si il est 15h30, le code sera "HB15"
-    const correctPassword = "HB" + currentHour;
-
-    // 3. On demande le code
-    const userPass = prompt("Code de sécurité horaire requis :");
-
-    if (userPass === correctPassword) {
-        sessionStorage.setItem('adminAuthenticated', 'true'); // Optionnel: garde la session active
-        window.location.href = "Dashboard.html";
-    } else {
-        alert("Code incorrect. Accès refusé.");
+window.finaliserCommande = () => {
+    if (panier.length === 0) {
+        alert("Votre panier est vide ! Ajoutez des produits avant de commander.");
+        return;
     }
+
+    const nom = document.getElementById('client-nom').value.trim();
+    const tel = document.getElementById('client-tel').value.trim();
+    const loc = document.getElementById('client-loc').value.trim();
+
+    if (!nom || !tel || !loc) {
+        alert("Veuillez remplir tous les champs (Nom, Téléphone et Localisation) pour valider votre commande.");
+        return;
+    }
+
+    let message = `*NOUVELLE COMMANDE HAIRTISTIC* 💈\n\n`;
+    message += `👤 *Client:* ${nom}\n`;
+    message += `📞 *Tél:* ${tel}\n`;
+    message += `📍 *Lieu:* ${loc}\n\n`;
+    message += `*DÉTAILS DE LA COMMANDE:*\n`;
+
+    let total = 0;
+    panier.forEach(item => {
+        const sousTotal = item.price * item.qte;
+        total += sousTotal;
+        message += `▪️ ${item.qte}x ${item.name} (${sousTotal.toLocaleString()} F)\n`;
+    });
+
+    message += `\n💰 *TOTAL À PAYER: ${total.toLocaleString()} F*`;
+
+    const numeroWhatsApp = "22893701943";
+    const lienWhatsApp = `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(message)}`;
+    
+    window.open(lienWhatsApp, "_blank");
+
+    panier = [];
+    renderPanier();
+    document.getElementById('cart-count').innerText = 0;
+    if(document.getElementById('client-nom')) document.getElementById('client-nom').value = "";
+    if(document.getElementById('client-tel')) document.getElementById('client-tel').value = "";
+    if(document.getElementById('client-loc')) document.getElementById('client-loc').value = "";
+    window.toggleModal('modal-panier'); 
 };
+
+// ==========================================
+// 9. ACCÈS ADMIN & CHARTS
+// ==========================================
+
+// Le bouton secret sur la page client (index.html) redirige vers login
+window.handleSecretClick = () => {
+    window.location.href = "admin/login.html"; 
+};
+
 let revenueChartInstance = null;
 let servicesChartInstance = null;
 
@@ -378,7 +568,6 @@ function updateCharts() {
     const ctxServ = document.getElementById('servicesChart');
     if (!ctxRev || !ctxServ) return;
 
-    // --- 1. Calcul des Revenus des 7 derniers jours ---
     const last7Days = {};
     for (let i = 6; i >= 0; i--) {
         const d = new Date();
@@ -393,15 +582,12 @@ function updateCharts() {
         }
     });
 
-    // --- 2. Calcul du Top Services (Coiffures réalisées) ---
     const serviceCounts = {};
     salesData.forEach(s => {
-        // On compte chaque type de prestation
         const serviceName = s.service || "Autre";
         serviceCounts[serviceName] = (serviceCounts[serviceName] || 0) + 1;
     });
 
-    // --- 3. Rendu du Graphique Linéaire (Évolution) ---
     if (revenueChartInstance) revenueChartInstance.destroy();
     revenueChartInstance = new Chart(ctxRev, {
         type: 'line',
@@ -410,7 +596,7 @@ function updateCharts() {
             datasets: [{
                 label: 'Chiffre d\'Affaires (F)',
                 data: Object.values(last7Days),
-                borderColor: '#c5a059', // Ton doré
+                borderColor: '#c5a059', 
                 backgroundColor: 'rgba(197, 160, 89, 0.1)',
                 borderWidth: 3,
                 fill: true,
@@ -423,7 +609,6 @@ function updateCharts() {
         }
     });
 
-    // --- 4. Rendu du Graphique Camembert (Top Coiffures) ---
     if (servicesChartInstance) servicesChartInstance.destroy();
     servicesChartInstance = new Chart(ctxServ, {
         type: 'doughnut',
@@ -443,3 +628,45 @@ function updateCharts() {
         }
     });
 }
+
+// ==========================================
+// 10. GESTION DU RÉPERTOIRE CLIENTS (Tableau)
+// ==========================================
+window.renderClientsTable = () => {
+    const tableBody = document.getElementById('clients-table');
+    if (!tableBody) return;
+
+    const dataToDisplay = window.filteredClientsData || clientsData;
+
+    tableBody.innerHTML = dataToDisplay.map(c => `
+        <tr>
+            <td style="font-weight: bold;">${c.nom}</td>
+            <td>${c.sexe}</td>
+            <td>${c.numero}</td>
+            <td>${c.quartier}</td>
+            <td style="font-weight: bold;">${escapeHtml(c.nom)}</td>
+            <td>${escapeHtml(c.sexe)}</td>
+            <td>${escapeHtml(c.numero)}</td>
+            <td>${escapeHtml(c.quartier)}</td>
+            <td>
+                <button onclick="deleteClient('${c.id}')" style="color:#ff4d4d; border:none; background:none; cursor:pointer; font-weight:bold;">Supprimer</button>
+            </td>
+        </tr>
+    `).join('');
+};
+
+window.deleteClient = async (id) => {
+    if (confirm("Supprimer ce client du répertoire ?")) {
+        await deleteDoc(doc(db, "clients", id));
+    }
+};
+
+window.filterClients = () => {
+    const searchVal = document.getElementById('search-client-db').value.toLowerCase();
+    window.filteredClientsData = clientsData.filter(c => 
+        c.nom.toLowerCase().includes(searchVal) || 
+        c.numero.includes(searchVal) ||
+        c.quartier.toLowerCase().includes(searchVal)
+    );
+    renderClientsTable();
+};

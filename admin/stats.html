@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statistiques & Finances | Hairtistic Barber</title>
+    <link rel="stylesheet" href="../style.css">    
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .bi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="brand"><span class="logo-dot"></span><h1>HAIRTISTIC</h1></div>
+            <nav class="menu">
+                <a href="Dashboard.html" class="menu-item">Tableau de bord</a>
+                <a href="caisse.html" class="menu-item">Ventes & Caisse</a>
+                <a href="stocks.html" class="menu-item">Stocks Produits</a>
+                <a href="clients.html" class="menu-item">Répertoire Clients</a>
+                <a href="stats.html" class="menu-item active">Statistiques & Finances</a>
+            </nav>
+            <div class="sidebar-footer"><p>Lomé, Togo</p></div>
+        </aside>
+
+        <main class="content">
+            <header class="main-header" style="justify-content: space-between;">
+                <div class="header-text">
+                    <h2>Business Intelligence</h2>
+                    <p>Vision globale des finances et de la croissance du salon.</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-primary" onclick="toggleModal('modal-depense')" style="background: #ff4d4d; color: white; border: none;">- Nouvelle Dépense</button>
+                </div>
+            </header>
+
+            <section class="bi-grid">
+                <div class="stat-card" style="border-top: 3px solid var(--gold);">
+                    <label>Chiffre d'Affaires (CA)</label>
+                    <div class="value" id="grand-total" style="color: var(--gold);">0 F</div>
+                </div>
+                <div class="stat-card" style="border-top: 3px solid #ff4d4d;">
+                    <label>Dépenses Totales</label>
+                    <div class="value" id="total-expenses" style="color: #ff4d4d;">0 F</div>
+                </div>
+                <div class="stat-card dark" style="border-top: 3px solid #4ade80;">
+                    <label>Bénéfice Net</label>
+                    <div class="value" id="net-profit" style="color: #4ade80;">0 F</div>
+                </div>
+                <div class="stat-card">
+                    <label>Total Clients</label>
+                    <div class="value" id="stat-clients-count">0</div>
+                </div>
+                <div class="stat-card">
+                    <label>Total Produits</label>
+                    <div class="value" id="stat-products-count">0</div>
+                </div>
+                <div class="stat-card">
+                    <label>Panier Moyen</label>
+                    <div class="value" id="avg-client">0 F</div>
+                </div>
+            </section>
+
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 30px; margin-top: 30px;">
+                <div class="table-container" style="padding: 30px;">
+                    <h3>Évolution des Revenus (7 derniers jours)</h3>
+                    <canvas id="revenueChart"></canvas>
+                </div>
+                <div class="table-container" style="padding: 30px;">
+                    <h3>Top Services</h3>
+                    <canvas id="servicesChart"></canvas>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="modal-depense" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="color: #ff4d4d;">Enregistrer une dépense</h3>
+                <span class="close" onclick="toggleModal('modal-depense')">&times;</span>
+            </div>
+            <form id="expense-form">
+                <div class="form-group">
+                    <label>Description (ex: Achat tondeuse, Loyer...)</label>
+                    <input type="text" id="exp-desc" required placeholder="Motif de la dépense">
+                </div>
+                <div class="form-group">
+                    <label>Catégorie</label>
+                    <select id="exp-category" required>
+                        <option value="Matériel">Matériel & Produits</option>
+                        <option value="Loyer">Loyer</option>
+                        <option value="Factures">Factures (Eau, Électricité...)</option>
+                        <option value="Salaires">Salaires</option>
+                        <option value="Marketing">Marketing / Pub</option>
+                        <option value="Autre">Autre</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Montant (FCFA)</label>
+                    <input type="number" id="exp-amount" required placeholder="10000">
+                </div>
+                <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                    <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                        <label>Date</label>
+                        <input type="date" id="exp-date" required style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
+                    </div>
+                    <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                        <label>Heure</label>
+                        <input type="time" id="exp-time" required style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-full" style="background: #ff4d4d; color: white; border: none;">Valider la dépense</button>
+            </form>
+        </div>
+    </div>
+
+<script type="module" src="../script.js"></script>
+<div id="sidebar-backdrop" onclick="toggleSidebar()"></div>
+</body>
+</html>
