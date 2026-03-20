@@ -7,14 +7,6 @@
     <link rel="stylesheet" href="../style.css">    
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        .bi-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 30px;
-        }
-    </style>
 </head>
 <body>
     <div class="app-container">
@@ -40,29 +32,50 @@
             </header>
 
             <section class="bi-grid">
-                <div class="stat-card" style="border-top: 3px solid var(--gold);">
-                    <label>Chiffre d'Affaires (CA)</label>
-                    <div class="value" id="grand-total" style="color: var(--gold);">0 F</div>
+                <div class="stat-card-pro">
+                    <div class="stat-icon" style="background: rgba(197, 160, 89, 0.1); color: var(--gold);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"></rect><circle cx="12" cy="12" r="2"></circle><path d="M6 12h.01M18 12h.01"></path></svg>
+                    </div>
+                    <div class="stat-info">
+                        <label>Chiffre d'Affaires</label>
+                        <div class="value" id="grand-total" style="color: var(--gold);">0 F</div>
+                    </div>
                 </div>
-                <div class="stat-card" style="border-top: 3px solid #ff4d4d;">
-                    <label>Dépenses Totales</label>
-                    <div class="value" id="total-expenses" style="color: #ff4d4d;">0 F</div>
+                <div class="stat-card-pro">
+                    <div class="stat-icon" style="background: rgba(255, 77, 77, 0.1); color: #ff4d4d;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline></svg>
+                    </div>
+                    <div class="stat-info">
+                        <label>Dépenses Totales</label>
+                        <div class="value" id="total-expenses" style="color: #ff4d4d;">0 F</div>
+                    </div>
                 </div>
-                <div class="stat-card dark" style="border-top: 3px solid #4ade80;">
-                    <label>Bénéfice Net</label>
-                    <div class="value" id="net-profit" style="color: #4ade80;">0 F</div>
+                <div class="stat-card-pro dark">
+                    <div class="stat-icon" style="background: rgba(74, 222, 128, 0.1); color: #4ade80;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                    </div>
+                    <div class="stat-info">
+                        <label>Bénéfice Net</label>
+                        <div class="value" id="net-profit" style="color: #4ade80;">0 F</div>
+                    </div>
                 </div>
-                <div class="stat-card">
-                    <label>Total Clients</label>
-                    <div class="value" id="stat-clients-count">0</div>
+                <div class="stat-card-pro">
+                    <div class="stat-icon" style="background: rgba(0,0,0,0.05); color: var(--text-main);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    </div>
+                    <div class="stat-info"><label>Total Clients</label><div class="value" id="stat-clients-count">0</div></div>
                 </div>
-                <div class="stat-card">
-                    <label>Total Produits</label>
-                    <div class="value" id="stat-products-count">0</div>
+                <div class="stat-card-pro">
+                    <div class="stat-icon" style="background: rgba(0,0,0,0.05); color: var(--text-main);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                    </div>
+                    <div class="stat-info"><label>Total Produits</label><div class="value" id="stat-products-count">0</div></div>
                 </div>
-                <div class="stat-card">
-                    <label>Panier Moyen</label>
-                    <div class="value" id="avg-client">0 F</div>
+                <div class="stat-card-pro">
+                    <div class="stat-icon" style="background: rgba(0,0,0,0.05); color: var(--text-main);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+                    </div>
+                    <div class="stat-info"><label>Panier Moyen</label><div class="value" id="avg-client">0 F</div></div>
                 </div>
             </section>
 

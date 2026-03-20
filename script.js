@@ -179,6 +179,7 @@ window.updateGlobalStats = () => {
 // ==========================================
 window.handleDashboardSale = async (e) => {
     e.preventDefault();
+    const saleId = document.getElementById('edit-sale-id')?.value;
     const clientName = document.getElementById('client-name').value || "Client Passant";
     const priceValue = parseInt(document.getElementById('price-input').value);
     
@@ -188,18 +189,27 @@ window.handleDashboardSale = async (e) => {
     const formattedDate = `${day}/${month}/${year}`;
     const finalTimestamp = new Date(`${rawDate}T${rawTime}`);
 
+    const saleDataObj = {
+        client: clientName,
+        service: document.getElementById('service-select').value,
+        price: priceValue,
+        payment: document.getElementById('payment-method').value,
+        status: "Payé",
+        date: formattedDate, 
+        time: rawTime,       
+        timestamp: finalTimestamp 
+    };
+
     try {
-        await addDoc(collection(db, "sales"), {
-            client: clientName,
-            service: document.getElementById('service-select').value,
-            price: priceValue,
-            payment: document.getElementById('payment-method').value,
-            status: "Payé",
-            date: formattedDate, 
-            time: rawTime,       
-            timestamp: finalTimestamp 
-        });
-        showSuccessModal("Prestation enregistrée avec succès !");
+        if (saleId) {
+            await updateDoc(doc(db, "sales", saleId), saleDataObj);
+            showSuccessModal("Prestation modifiée avec succès !");
+        } else {
+            await addDoc(collection(db, "sales"), saleDataObj);
+            showSuccessModal("Prestation enregistrée avec succès !");
+        }
+        if(document.getElementById('edit-sale-id')) document.getElementById('edit-sale-id').value = '';
+        if(document.querySelector('#modal-coupe h3')) document.querySelector('#modal-coupe h3').innerText = "Enregistrer une prestation";
         window.toggleModal('modal-coupe');
         e.target.reset();
     } catch (err) { alert("Erreur : " + err.message); }
@@ -217,6 +227,9 @@ function renderTables() {
                 ? `<button onclick="quickAddClientFromTable('${s.client.replace(/'/g, "\\'")}')" style="background:#c5a059; color:black; border:none; border-radius:4px; padding:6px 12px; cursor:pointer; font-weight:bold; font-size:12px; margin-right: 10px;" title="Ajouter au répertoire">Ajouter</button>`
                 : ``;
             
+            actionHtml += `<button onclick="openEditSale('${s.id}')" class="icon-btn edit" title="Modifier la prestation">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+            </button>`;
             actionHtml += `<button onclick="deleteSale('${s.id}')" class="icon-btn" title="Supprimer la prestation">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
             </button>`;
@@ -251,6 +264,9 @@ function renderTables() {
                     <td><b>${s.price.toLocaleString()} F</b></td>
                     <td>
                         ${addBtn}
+                        <button onclick="openEditSale('${s.id}')" class="icon-btn edit" title="Modifier la prestation">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                        </button>
                         <button onclick="deleteSale('${s.id}')" class="icon-btn" title="Supprimer la prestation">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
                         </button>
@@ -268,6 +284,9 @@ function renderTables() {
                 <td>${p.price.toLocaleString()} F</td>
                 <td>${p.quantity}</td>
                 <td>
+                    <button onclick="openEditProduct('${p.id}')" class="icon-btn edit" title="Modifier le produit">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                    </button>
                     <button onclick="deleteProduct('${p.id}')" class="icon-btn" title="Supprimer le produit">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
                     </button>
@@ -335,6 +354,41 @@ window.deleteProduct = (id) => {
     });
 };
 
+window.openEditSale = (id) => {
+    const s = salesData.find(x => x.id === id);
+    if(s) {
+        const idEl = document.getElementById('edit-sale-id');
+        if(idEl) idEl.value = s.id;
+        document.getElementById('client-name').value = s.client === "Client Passant" ? "" : s.client;
+        document.getElementById('service-select').value = s.service;
+        document.getElementById('price-input').value = s.price;
+        document.getElementById('payment-method').value = s.payment;
+        
+        if (s.date && s.date.includes('/')) {
+            const [d, m, y] = s.date.split('/');
+            document.getElementById('date-input').value = `${y}-${m}-${d}`;
+        }
+        document.getElementById('time-input').value = s.time;
+        
+        if(document.querySelector('#modal-coupe h3')) document.querySelector('#modal-coupe h3').innerText = "Modifier la prestation";
+        window.toggleModal('modal-coupe');
+    }
+};
+
+window.openEditProduct = (id) => {
+    const p = stockData.find(x => x.id === id);
+    if(p) {
+        const idEl = document.getElementById('edit-prod-id');
+        if(idEl) idEl.value = p.id;
+        document.getElementById('prod-name').value = p.name;
+        document.getElementById('prod-desc').value = p.description || '';
+        document.getElementById('prod-price').value = p.price;
+        document.getElementById('prod-qty').value = p.quantity;
+        if(document.querySelector('#modal-produit h3')) document.querySelector('#modal-produit h3').innerText = "Modifier le produit";
+        window.toggleModal('modal-produit');
+    }
+};
+
 // ==========================================
 // 7. INITIALISATION & LISTENERS FIREBASE
 // ==========================================
@@ -370,24 +424,42 @@ document.addEventListener('DOMContentLoaded', () => {
         productForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const file = document.getElementById('prod-image').files[0];
-            const reader = new FileReader();
+            const prodId = document.getElementById('edit-prod-id')?.value;
 
-            reader.onloadend = async () => {
+            const saveProduct = async (imgData) => {
+                const prodData = {
+                    name: document.getElementById('prod-name').value,
+                    description: document.getElementById('prod-desc').value,
+                    price: parseInt(document.getElementById('prod-price').value),
+                    quantity: parseInt(document.getElementById('prod-qty').value),
+                    timestamp: new Date()
+                };
+                if (imgData) prodData.image = imgData;
+
                 try {
-                    await addDoc(collection(db, "stock"), {
-                        name: document.getElementById('prod-name').value,
-                        description: document.getElementById('prod-desc').value,
-                        price: parseInt(document.getElementById('prod-price').value),
-                        quantity: parseInt(document.getElementById('prod-qty').value),
-                        image: reader.result,
-                        timestamp: new Date()
-                    });
-                    showSuccessModal("Produit ajouté au catalogue !");
+                    if (prodId) {
+                        await updateDoc(doc(db, "stock", prodId), prodData);
+                        showSuccessModal("Produit modifié !");
+                    } else {
+                        if(!imgData) { alert("Veuillez sélectionner une image."); return; }
+                        await addDoc(collection(db, "stock"), prodData);
+                        showSuccessModal("Produit ajouté au catalogue !");
+                    }
+                    
+                    if(document.getElementById('edit-prod-id')) document.getElementById('edit-prod-id').value = '';
+                    if(document.querySelector('#modal-produit h3')) document.querySelector('#modal-produit h3').innerText = "Ajouter au catalogue";
                     window.toggleModal('modal-produit');
                     productForm.reset();
                 } catch (err) { alert("Erreur : " + err.message); }
             };
-            if (file) reader.readAsDataURL(file);
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onloadend = () => saveProduct(reader.result);
+                reader.readAsDataURL(file);
+            } else {
+                saveProduct(null); // Conserve l'ancienne image si non modifiée
+            }
         });
     }
 
@@ -435,17 +507,27 @@ document.addEventListener('DOMContentLoaded', () => {
             const rawDate = document.getElementById('exp-date').value;
             const rawTime = document.getElementById('exp-time').value;
             const [year, month, day] = rawDate.split('-');
+            const expId = document.getElementById('edit-exp-id')?.value;
             
+            const expDataObj = {
+                description: document.getElementById('exp-desc').value,
+                category: document.getElementById('exp-category').value,
+                amount: parseInt(document.getElementById('exp-amount').value),
+                date: `${day}/${month}/${year}`,
+                time: rawTime,
+                timestamp: new Date(`${rawDate}T${rawTime}`)
+            };
+
             try {
-                await addDoc(collection(db, "expenses"), {
-                    description: document.getElementById('exp-desc').value,
-                    category: document.getElementById('exp-category').value,
-                    amount: parseInt(document.getElementById('exp-amount').value),
-                    date: `${day}/${month}/${year}`,
-                    time: rawTime,
-                    timestamp: new Date(`${rawDate}T${rawTime}`)
-                });
-                showSuccessModal("Dépense enregistrée !");
+                if (expId) {
+                    await updateDoc(doc(db, "expenses", expId), expDataObj);
+                    showSuccessModal("Dépense modifiée !");
+                } else {
+                    await addDoc(collection(db, "expenses"), expDataObj);
+                    showSuccessModal("Dépense enregistrée !");
+                }
+                if(document.getElementById('edit-exp-id')) document.getElementById('edit-exp-id').value = '';
+                if(document.querySelector('#modal-depense h3')) document.querySelector('#modal-depense h3').innerText = "Enregistrer une dépense";
                 window.toggleModal('modal-depense');
                 expenseForm.reset();
             } catch (err) { alert("Erreur : " + err.message); }
@@ -757,7 +839,9 @@ window.renderClientsTable = () => {
                 <td>${c.numero}</td>
                 <td>${c.quartier}</td>
                 <td>
-                    <button onclick="openEditClient('${c.id}')" style="color:#c5a059; border:none; background:none; cursor:pointer; font-weight:bold; margin-right:15px;">Compléter</button>
+                    <button onclick="openEditClient('${c.id}')" class="icon-btn edit" title="Compléter ou modifier">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                    </button>
                     <button onclick="deleteClient('${c.id}')" class="icon-btn" title="Supprimer le client">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
                     </button>
@@ -816,6 +900,9 @@ window.renderExpensesTable = () => {
             <td><span class="badge">${e.category}</span></td>
             <td style="color:#ff4d4d; font-weight:bold;">${e.amount.toLocaleString()} F</td>
             <td>
+                    <button onclick="openEditExpense('${e.id}')" class="icon-btn edit" title="Modifier la dépense">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                    </button>
                     <button onclick="deleteExpense('${e.id}')" class="icon-btn" title="Supprimer la dépense">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
                     </button>
@@ -828,6 +915,25 @@ window.deleteExpense = (id) => {
     window.showConfirmModal("Supprimer cette dépense définitivement ?", async () => {
         await deleteDoc(doc(db, "expenses", id));
     });
+};
+
+window.openEditExpense = (id) => {
+    const e = expensesData.find(x => x.id === id);
+    if(e) {
+        const idEl = document.getElementById('edit-exp-id');
+        if(idEl) idEl.value = e.id;
+        document.getElementById('exp-desc').value = e.description;
+        document.getElementById('exp-category').value = e.category;
+        document.getElementById('exp-amount').value = e.amount;
+        
+        if (e.date && e.date.includes('/')) {
+            const [d, m, y] = e.date.split('/');
+            document.getElementById('exp-date').value = `${y}-${m}-${d}`;
+        }
+        document.getElementById('exp-time').value = e.time;
+        if(document.querySelector('#modal-depense h3')) document.querySelector('#modal-depense h3').innerText = "Modifier la dépense";
+        window.toggleModal('modal-depense');
+    }
 };
 
 window.quickAddClient = async () => {

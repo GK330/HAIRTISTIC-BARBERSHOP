@@ -29,7 +29,7 @@
                     <p>Suivi détaillé de vos charges et frais</p>
                 </div>
                 <div class="header-actions">
-                    <button class="btn btn-primary" onclick="toggleModal('modal-depense')" style="background: #ff4d4d; color: white; border: none;">+ Nouvelle Dépense</button>
+                    <button class="btn btn-primary" onclick="document.getElementById('edit-exp-id').value=''; document.getElementById('expense-form').reset(); document.querySelector('#modal-depense h3').innerText='Enregistrer une dépense'; toggleModal('modal-depense')" style="background: #ff4d4d; color: white; border: none;">+ Nouvelle Dépense</button>
                 </div>
             </header>
 
@@ -59,6 +59,7 @@
                 <span class="close" onclick="toggleModal('modal-depense')">&times;</span>
             </div>
             <form id="expense-form">
+                <input type="hidden" id="edit-exp-id">
                 <div class="form-group">
                     <label>Description (ex: Achat tondeuse, Loyer...)</label>
                     <input type="text" id="exp-desc" required placeholder="Motif de la dépense">
