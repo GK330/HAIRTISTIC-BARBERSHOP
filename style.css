@@ -58,6 +58,14 @@ body { background-color: var(--bg); color: var(--text-main); overflow-x: hidden;
 .stat-card label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; opacity: 0.5; }
 .stat-card .value { font-size: 2.4rem; font-weight: 800; margin-top: 15px; letter-spacing: -1px; }
 
+/* --- DASHBOARD BOTTOM GRID --- */
+.dashboard-bottom {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 30px;
+    align-items: start;
+}
+
 /* --- BUTTONS --- */
 .btn { padding: 18px 36px; border-radius: 16px; border: none; font-weight: 700; cursor: pointer; transition: 0.3s; display: inline-block; text-align: center; }
 .btn-primary { background: var(--accent); color: var(--white); }
@@ -143,6 +151,10 @@ td { padding: 22px 20px; border-bottom: 1px solid #f8f8f8; font-weight: 600; fon
         padding: 20px;
     }
     
+    .dashboard-bottom {
+        grid-template-columns: 1fr;
+    }
+
     .main-header {
       padding-top: 60px;
     }
@@ -183,4 +195,111 @@ td { padding: 22px 20px; border-bottom: 1px solid #f8f8f8; font-weight: 600; fon
     border-radius: 8px;
     font-size: 0.8rem;
     font-weight: 700;
+}
+
+/* --- SUCCESS ANIMATED MODAL --- */
+.success-modal-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(4px);
+    display: flex; justify-content: center; align-items: center;
+    z-index: 4000;
+    opacity: 0;
+    animation: fadeInOverlay 0.3s forwards;
+}
+.success-modal-card {
+    background: var(--white);
+    padding: 40px;
+    border-radius: 24px;
+    text-align: center;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+    transform: scale(0.8);
+    animation: popInCard 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards 0.1s;
+    max-width: 90%;
+    width: 350px;
+}
+.checkmark {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    display: block;
+    stroke-width: 3;
+    stroke: #fff;
+    stroke-miterlimit: 10;
+    margin: 0 auto 20px;
+    box-shadow: inset 0px 0px 0px #4ade80;
+    animation: fillAction .4s ease-in-out .4s forwards, scaleAction .3s ease-in-out .9s both;
+}
+.checkmark-circle {
+    stroke-dasharray: 166;
+    stroke-dashoffset: 166;
+    stroke-width: 3;
+    stroke-miterlimit: 10;
+    stroke: #4ade80;
+    fill: none;
+    animation: strokeAction 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+.checkmark-check {
+    transform-origin: 50% 50%;
+    stroke-dasharray: 48;
+    stroke-dashoffset: 48;
+    animation: strokeAction 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+}
+@keyframes strokeAction { 100% { stroke-dashoffset: 0; } }
+@keyframes scaleAction { 0%, 100% { transform: none; } 50% { transform: scale3d(1.1, 1.1, 1); } }
+@keyframes fillAction { 100% { box-shadow: inset 0px 0px 0px 50px #4ade80; } }
+@keyframes fadeInOverlay { to { opacity: 1; } }
+@keyframes popInCard { to { transform: scale(1); } }
+
+/* --- CONFIRM ANIMATED MODAL --- */
+.confirm-modal-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(4px);
+    display: flex; justify-content: center; align-items: center;
+    z-index: 4000;
+    opacity: 0;
+    animation: fadeInOverlay 0.2s forwards;
+}
+.confirm-modal-card {
+    background: var(--white);
+    padding: 30px;
+    border-radius: 20px;
+    text-align: center;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+    transform: scale(0.9);
+    animation: popInCard 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    max-width: 90%;
+    width: 350px;
+}
+.confirm-actions { display: flex; gap: 15px; margin-top: 25px; justify-content: center; }
+.btn-confirm-yes { background: #ff4d4d; color: white; border: none; padding: 12px 20px; border-radius: 10px; cursor: pointer; font-weight: bold; flex: 1; transition: 0.3s; }
+.btn-confirm-no { background: #f0f0f0; color: #333; border: none; padding: 12px 20px; border-radius: 10px; cursor: pointer; font-weight: bold; flex: 1; transition: 0.3s; }
+.btn-confirm-yes:hover { background: #e60000; }
+.btn-confirm-no:hover { background: #e0e0e0; }
+
+/* --- ICON BUTTONS --- */
+.icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    border-radius: 6px;
+    transition: 0.2s;
+}
+.icon-btn:hover {
+    background: rgba(255, 77, 77, 0.1);
+}
+.icon-btn svg {
+    width: 18px;
+    height: 18px;
+    stroke: #ff4d4d;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }

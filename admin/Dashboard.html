@@ -19,6 +19,7 @@
             <nav class="menu">
                 <a href="Dashboard.html" class="menu-item">Tableau de bord</a>
                 <a href="caisse.html" class="menu-item">Ventes & Caisse</a>
+                <a href="depense.html" class="menu-item">Dépenses</a>
                 <a href="stocks.html" class="menu-item">Stocks Produits</a>
                 <a href="clients.html" class="menu-item">Répertoire Clients</a>
                 <a href="stats.html" class="menu-item active">Statistiques & Finances</a>
@@ -30,10 +31,12 @@
 
         <main class="content">
             <header class="main-header">
-                <button class="menu-burger" onclick="toggleSidebar()">☰</button>
-                <div class="header-text">
-                    <h2>BIENVENUE SUR TON DASHBOARD JOSUE</h2>
-                    <p id="live-date">Chargement...</p>
+                <div style="display: flex; align-items: center;">
+                    <button class="menu-burger" onclick="toggleSidebar()">☰</button>
+                    <div class="header-text">
+                        <h2>BIENVENUE SUR TON DASHBOARD JOSUE</h2>
+                        <p id="live-date">Chargement...</p>
+                    </div>
                 </div>
                 <div class="header-actions">
                     <button class="btn btn-primary" onclick="toggleModal('modal-coupe')">+ Nouvelle Coupe</button>
@@ -55,29 +58,50 @@
                 </div>
             </section>
 
-            <section class="data-section">
-    <div class="section-header">
-        <h3>Dernières activités</h3>
-        <div class="header-buttons">
-            <button class="btn-text" onclick="exportToExcel()" style="margin-right: 10px; cursor: pointer;">💾 Exporter Excel</button>
-            <a href="caisse.html" class="btn-text">Voir tout l'historique</a>
-        </div>
-    </div>
-    <div class="table-container">
-        <table>
-            <thead>
-                <tr>
-                    <th>Heure</th>
-                    <th>Client</th>
-                    <th>Prestation</th>
-                    <th>Montant</th>
-                </tr>
-            </thead>
-            <tbody id="home-sales-table">
-                </tbody>
-        </table>
-    </div>
-</section>
+            <div class="dashboard-bottom">
+                <section class="data-section">
+                    <div class="section-header">
+                        <h3>Dernières activités</h3>
+                        <div class="header-buttons">
+                            <button class="btn-text" onclick="exportToExcel()" style="margin-right: 10px; cursor: pointer;">💾 Exporter</button>
+                            <a href="caisse.html" class="btn-text">Historique</a>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Heure</th>
+                                    <th>Client</th>
+                                    <th>Prestation</th>
+                                    <th>Montant</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="home-sales-table">
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section class="data-section">
+                    <div class="section-header">
+                        <h3>Top 5 Clients 🏆</h3>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Fidèle</th>
+                                    <th>Total Dépensé</th>
+                                </tr>
+                            </thead>
+                            <tbody id="top-clients-table">
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
         </main>
     </div>
 
@@ -90,7 +114,10 @@
             <form id="sale-form">
                 <div class="form-group">
                     <label>Nom du client</label>
-                    <input type="text" id="client-name" list="clients-datalist" placeholder="Rechercher ou taper un nom..." autocomplete="off">
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="client-name" list="clients-datalist" placeholder="Rechercher ou taper un nom..." autocomplete="off" style="flex: 1;">
+                        <button type="button" class="btn btn-secondary" onclick="quickAddClient()" style="padding: 10px 15px; border-radius: 8px; font-weight: bold; font-size: 1.2rem;" title="Ajouter ce client au répertoire">+</button>
+                    </div>
                     <datalist id="clients-datalist">
                         </datalist>
                 </div>
@@ -107,6 +134,8 @@
                         <option value="Low taper">Low taper</option>
                         <option value="Maze">Maze</option>
                         <option value="Unregular cut">Unregular cut</option>
+                        <option value="Coupe femme">Coupe femme</option>
+                        <option value="Formations">Formations</option>
 
                     </select>
                 </div>

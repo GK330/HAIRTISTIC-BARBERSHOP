@@ -18,6 +18,7 @@
             <nav class="menu">
                 <a href="Dashboard.html" class="menu-item">Tableau de bord</a>
                 <a href="caisse.html" class="menu-item">Ventes & Caisse</a>
+                <a href="depense.html" class="menu-item">Dépenses</a>
                 <a href="stocks.html" class="menu-item">Stocks Produits</a>
                 <a href="clients.html" class="menu-item">Répertoire Clients</a>
                 <a href="stats.html" class="menu-item active">Statistiques & Finances</a>
@@ -90,6 +91,39 @@
                     <input type="text" id="new-client-loc" required placeholder="Ex: Adidogomé">
                 </div>
                 <button type="submit" class="btn btn-full">Enregistrer le client</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="modal-edit-client" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Compléter les infos</h3>
+                <span class="close" onclick="toggleModal('modal-edit-client')">&times;</span>
+            </div>
+            <form id="client-edit-form">
+                <input type="hidden" id="edit-client-id">
+                <div class="form-group">
+                    <label>Nom complet</label>
+                    <input type="text" id="edit-client-name" required>
+                </div>
+                <div class="form-group">
+                    <label>Sexe</label>
+                    <select id="edit-client-sex" required>
+                        <option value="Homme">Homme</option>
+                        <option value="Femme">Femme</option>
+                        <option value="Non précisé">Non précisé</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Numéro de téléphone</label>
+                    <input type="tel" id="edit-client-phone" required placeholder="Ex: 90 00 00 00">
+                </div>
+                <div class="form-group">
+                    <label>Quartier</label>
+                    <input type="text" id="edit-client-loc" required placeholder="Ex: Adidogomé">
+                </div>
+                <button type="submit" class="btn btn-full" style="background: var(--gold); color: black;">Mettre à jour</button>
             </form>
         </div>
     </div>

@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 // ==========================================
@@ -35,7 +35,8 @@ const isAdminPage = currentPage.includes('Dashboard.html') ||
                     currentPage.includes('caisse.html') || 
                     currentPage.includes('stocks.html') || 
                     currentPage.includes('stats.html') || 
-                    currentPage.includes('clients.html');
+                    currentPage.includes('clients.html') ||
+                    currentPage.includes('depense.html');
 
 onAuthStateChanged(auth, (user) => {
     if (isAdminPage && !user) {
@@ -91,6 +92,55 @@ function updateLiveDate() {
         dateEl.innerText = new Date().toLocaleDateString('fr-FR', options);
     }
 }
+
+window.showSuccessModal = (message) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'success-modal-overlay';
+    overlay.innerHTML = `
+        <div class="success-modal-card">
+            <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+                <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+            </svg>
+            <h3 style="margin-bottom: 10px; color: var(--text-main); font-weight: 800;">Succès !</h3>
+            <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.5;">${message}</p>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    setTimeout(() => {
+        overlay.style.opacity = '0';
+        overlay.style.transition = 'opacity 0.3s ease';
+        setTimeout(() => overlay.remove(), 300);
+    }, 2500); // Disparaît tout seul après 2.5 secondes
+};
+
+window.showConfirmModal = (message, onConfirm) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'confirm-modal-overlay';
+    overlay.innerHTML = `
+        <div class="confirm-modal-card">
+            <h3 style="margin-bottom: 10px; color: var(--text-main); font-weight: 800;">Attention</h3>
+            <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.5;">${message}</p>
+            <div class="confirm-actions">
+                <button class="btn-confirm-no" id="btn-cancel">Annuler</button>
+                <button class="btn-confirm-yes" id="btn-confirm">Supprimer</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+
+    const closeOverlay = () => {
+        overlay.style.opacity = '0';
+        overlay.style.transition = 'opacity 0.2s ease';
+        setTimeout(() => overlay.remove(), 200);
+    };
+
+    document.getElementById('btn-cancel').onclick = closeOverlay;
+    document.getElementById('btn-confirm').onclick = () => {
+        closeOverlay();
+        onConfirm();
+    };
+};
 
 // ==========================================
 // 4. BUSINESS INTELLIGENCE (STATS GLOBALES)
@@ -149,6 +199,7 @@ window.handleDashboardSale = async (e) => {
             time: rawTime,       
             timestamp: finalTimestamp 
         });
+        showSuccessModal("Prestation enregistrée avec succès !");
         window.toggleModal('modal-coupe');
         e.target.reset();
     } catch (err) { alert("Erreur : " + err.message); }
@@ -160,30 +211,52 @@ window.handleDashboardSale = async (e) => {
 function renderTables() {
     const homeTable = document.getElementById('home-sales-table');
     if (homeTable) {
-        homeTable.innerHTML = salesData.slice(0, 5).map(s => `
-            <tr>
-                <td>${s.time}</td>
-                <td>${s.client}</td>
-                <td>${s.service}</td>
-                <td><b>${s.price.toLocaleString()} F</b></td>
-            </tr>`).join('');
+        homeTable.innerHTML = salesData.slice(0, 5).map(s => {
+            const isKnown = clientsData.some(c => c.nom.toLowerCase() === s.client.toLowerCase());
+            let actionHtml = (!isKnown && s.client !== "Client Passant") 
+                ? `<button onclick="quickAddClientFromTable('${s.client.replace(/'/g, "\\'")}')" style="background:#c5a059; color:black; border:none; border-radius:4px; padding:6px 12px; cursor:pointer; font-weight:bold; font-size:12px; margin-right: 10px;" title="Ajouter au répertoire">Ajouter</button>`
+                : ``;
+            
+            actionHtml += `<button onclick="deleteSale('${s.id}')" class="icon-btn" title="Supprimer la prestation">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+            </button>`;
+            
+            return `
+                <tr>
+                    <td>${s.time}</td>
+                    <td>${s.client}</td>
+                    <td>${s.service}</td>
+                    <td><b>${s.price.toLocaleString()} F</b></td>
+                    <td>${actionHtml}</td>
+                </tr>`;
+        }).join('');
     }
 
     const fullTable = document.getElementById('full-sales-table');
     if (fullTable) {
         const dataToDisplay = window.filteredSales || salesData;
-        fullTable.innerHTML = dataToDisplay.map(s => `
-            <tr>
-                <td>${s.date}</td>
-                <td>${s.time}</td>
-                <td>${s.client}</td>
-                <td>${s.service}</td>
-                <td><span style="background:#eee; padding:4px 8px; border-radius:6px; font-size:0.8rem;">${s.payment}</span></td>
-                <td><b>${s.price.toLocaleString()} F</b></td>
-                <td>
-                    <button onclick="deleteSale('${s.id}')" style="color:#ff4d4d; border:none; background:none; cursor:pointer; font-weight:bold;">Supprimer</button>
-                </td>
-            </tr>`).join('');
+        fullTable.innerHTML = dataToDisplay.map(s => {
+            const isKnown = clientsData.some(c => c.nom.toLowerCase() === s.client.toLowerCase());
+            const addBtn = (!isKnown && s.client !== "Client Passant") 
+                ? `<button onclick="quickAddClientFromTable('${s.client.replace(/'/g, "\\'")}')" style="color:#c5a059; border:none; background:none; cursor:pointer; font-weight:bold; margin-right:15px;" title="Ajouter au répertoire">Ajouter</button>`
+                : '';
+
+            return `
+                <tr>
+                    <td>${s.date}</td>
+                    <td>${s.time}</td>
+                    <td>${s.client}</td>
+                    <td>${s.service}</td>
+                    <td><span style="background:#eee; padding:4px 8px; border-radius:6px; font-size:0.8rem;">${s.payment}</span></td>
+                    <td><b>${s.price.toLocaleString()} F</b></td>
+                    <td>
+                        ${addBtn}
+                        <button onclick="deleteSale('${s.id}')" class="icon-btn" title="Supprimer la prestation">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                        </button>
+                    </td>
+                </tr>`;
+        }).join('');
     }
 
     const stockTable = document.getElementById('stock-table');
@@ -194,9 +267,42 @@ function renderTables() {
                 <td>${p.name}</td>
                 <td>${p.price.toLocaleString()} F</td>
                 <td>${p.quantity}</td>
-                <td><button onclick="deleteProduct('${p.id}')" style="color:red; border:none; background:none; cursor:pointer;">Supprimer</button></td>
+                <td>
+                    <button onclick="deleteProduct('${p.id}')" class="icon-btn" title="Supprimer le produit">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                    </button>
+                </td>
             </tr>`).join('');
     }
+
+    renderTopClients();
+}
+
+window.renderTopClients = () => {
+    const tbody = document.getElementById('top-clients-table');
+    if (!tbody) return;
+
+    const clientTotals = {};
+    salesData.forEach(s => {
+        const name = s.client || "Client Passant";
+        // On ignore les "Client Passant" car ce ne sont pas des clients fidélisables
+        if (name !== "Client Passant") {
+            clientTotals[name] = (clientTotals[name] || 0) + s.price;
+        }
+    });
+
+    const top5 = Object.entries(clientTotals)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 5);
+
+    tbody.innerHTML = top5.map(([name, total], index) => {
+        const rankColor = index === 0 ? '#ffd700' : index === 1 ? '#c0c0c0' : index === 2 ? '#cd7f32' : 'var(--text-main)';
+        return `
+            <tr>
+                <td style="font-weight:bold;"><span style="color:${rankColor}; font-size:1.1rem; margin-right:8px;">#${index+1}</span> ${name}</td>
+                <td style="font-weight:bold; color:#c5a059;">${total.toLocaleString()} F</td>
+            </tr>`;
+    }).join('');
 }
 
 window.filterSales = () => {
@@ -211,10 +317,10 @@ window.filterSales = () => {
     renderTables(); 
 };
 
-window.deleteSale = async (id) => {
-    if (confirm("Supprimer cette vente définitivement ?")) {
+window.deleteSale = (id) => {
+    window.showConfirmModal("Supprimer cette vente définitivement ?", async () => {
         await deleteDoc(doc(db, "sales", id));
-    }
+    });
 };
 
 window.exportToExcel = () => {
@@ -223,8 +329,10 @@ window.exportToExcel = () => {
     XLSX.writeFile(wb, `Rapport_Ventes_${new Date().toLocaleDateString()}.xlsx`);
 };
 
-window.deleteProduct = async (id) => {
-    if (confirm("Supprimer ce produit ?")) await deleteDoc(doc(db, "stock", id));
+window.deleteProduct = (id) => {
+    window.showConfirmModal("Supprimer ce produit ?", async () => {
+        await deleteDoc(doc(db, "stock", id));
+    });
 };
 
 // ==========================================
@@ -274,7 +382,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         image: reader.result,
                         timestamp: new Date()
                     });
-                    alert("Produit ajouté au catalogue !");
+                    showSuccessModal("Produit ajouté au catalogue !");
                     window.toggleModal('modal-produit');
                     productForm.reset();
                 } catch (err) { alert("Erreur : " + err.message); }
@@ -295,9 +403,27 @@ document.addEventListener('DOMContentLoaded', () => {
                     quartier: document.getElementById('new-client-loc').value,
                     timestamp: new Date()
                 });
-                alert("Client ajouté avec succès !");
+                showSuccessModal("Client ajouté avec succès !");
                 window.toggleModal('modal-add-client');
                 clientAddForm.reset();
+            } catch (err) { alert("Erreur : " + err.message); }
+        });
+    }
+
+    const clientEditForm = document.getElementById('client-edit-form');
+    if (clientEditForm) {
+        clientEditForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('edit-client-id').value;
+            try {
+                await updateDoc(doc(db, "clients", id), {
+                    nom: document.getElementById('edit-client-name').value,
+                    sexe: document.getElementById('edit-client-sex').value,
+                    numero: document.getElementById('edit-client-phone').value || 'À compléter',
+                    quartier: document.getElementById('edit-client-loc').value || 'À compléter'
+                });
+                showSuccessModal("Informations du client mises à jour !");
+                window.toggleModal('modal-edit-client');
             } catch (err) { alert("Erreur : " + err.message); }
         });
     }
@@ -319,7 +445,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     time: rawTime,
                     timestamp: new Date(`${rawDate}T${rawTime}`)
                 });
-                alert("Dépense enregistrée !");
+                showSuccessModal("Dépense enregistrée !");
                 window.toggleModal('modal-depense');
                 expenseForm.reset();
             } catch (err) { alert("Erreur : " + err.message); }
@@ -355,6 +481,9 @@ document.addEventListener('DOMContentLoaded', () => {
     onSnapshot(query(collection(db, "clients"), orderBy("timestamp", "desc")), (snap) => {
         clientsData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         if (typeof window.renderClientsTable === "function") window.renderClientsTable();
+        
+        // Met à jour les tableaux de ventes en direct pour masquer le bouton "+" une fois le client ajouté
+        try { renderTables(); } catch (e) {}
 
         const datalist = document.getElementById('clients-datalist');
         if (datalist) {
@@ -365,6 +494,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     onSnapshot(collection(db, "expenses"), (snap) => {
         expensesData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        if (typeof window.renderExpensesTable === "function") window.renderExpensesTable();
         window.updateGlobalStats();
     });
 });
@@ -616,22 +746,42 @@ window.renderClientsTable = () => {
 
     const dataToDisplay = window.filteredClientsData || clientsData;
 
-    tableBody.innerHTML = dataToDisplay.map(c => `
-        <tr>
-            <td style="font-weight: bold;">${c.nom}</td>
-            <td>${c.sexe}</td>
-            <td>${c.numero}</td>
-            <td>${c.quartier}</td>
-            <td>
-                <button onclick="deleteClient('${c.id}')" style="color:#ff4d4d; border:none; background:none; cursor:pointer; font-weight:bold;">Supprimer</button>
-            </td>
-        </tr>
-    `).join('');
+    tableBody.innerHTML = dataToDisplay.map(c => {
+        const isIncomplete = c.numero === 'À compléter' || c.quartier === 'À compléter' || !c.numero || !c.quartier;
+        const warningDot = isIncomplete ? `<span style="display:inline-block; width:10px; height:10px; background:#ff4d4d; border-radius:50%; margin-left:10px; box-shadow: 0 0 5px rgba(255, 77, 77, 0.5);" title="Profil incomplet (Numéro ou Quartier manquant)"></span>` : '';
+
+        return `
+            <tr>
+                <td style="font-weight: bold; display: flex; align-items: center;">${c.nom} ${warningDot}</td>
+                <td>${c.sexe}</td>
+                <td>${c.numero}</td>
+                <td>${c.quartier}</td>
+                <td>
+                    <button onclick="openEditClient('${c.id}')" style="color:#c5a059; border:none; background:none; cursor:pointer; font-weight:bold; margin-right:15px;">Compléter</button>
+                    <button onclick="deleteClient('${c.id}')" class="icon-btn" title="Supprimer le client">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
 };
 
-window.deleteClient = async (id) => {
-    if (confirm("Supprimer ce client du répertoire ?")) {
+window.deleteClient = (id) => {
+    window.showConfirmModal("Supprimer ce client du répertoire ?", async () => {
         await deleteDoc(doc(db, "clients", id));
+    });
+};
+
+window.openEditClient = (id) => {
+    const client = clientsData.find(c => c.id === id);
+    if (client) {
+        document.getElementById('edit-client-id').value = client.id;
+        document.getElementById('edit-client-name').value = client.nom;
+        document.getElementById('edit-client-sex').value = client.sexe || 'Non précisé';
+        document.getElementById('edit-client-phone').value = client.numero === 'À compléter' ? '' : client.numero;
+        document.getElementById('edit-client-loc').value = client.quartier === 'À compléter' ? '' : client.quartier;
+        window.toggleModal('modal-edit-client');
     }
 };
 
@@ -643,4 +793,81 @@ window.filterClients = () => {
         c.quartier.toLowerCase().includes(searchVal)
     );
     renderClientsTable();
+};
+
+// ==========================================
+// 11. GESTION DES DÉPENSES & AJOUT RAPIDE CLIENT
+// ==========================================
+window.renderExpensesTable = () => {
+    const tbody = document.getElementById('expenses-table');
+    if (!tbody) return;
+
+    const sorted = [...expensesData].sort((a, b) => {
+        const tA = a.timestamp?.seconds || 0;
+        const tB = b.timestamp?.seconds || 0;
+        return tB - tA;
+    });
+
+    tbody.innerHTML = sorted.map(e => `
+        <tr>
+            <td>${e.date}</td>
+            <td>${e.time}</td>
+            <td>${e.description}</td>
+            <td><span class="badge">${e.category}</span></td>
+            <td style="color:#ff4d4d; font-weight:bold;">${e.amount.toLocaleString()} F</td>
+            <td>
+                    <button onclick="deleteExpense('${e.id}')" class="icon-btn" title="Supprimer la dépense">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                    </button>
+            </td>
+        </tr>
+    `).join('');
+};
+
+window.deleteExpense = (id) => {
+    window.showConfirmModal("Supprimer cette dépense définitivement ?", async () => {
+        await deleteDoc(doc(db, "expenses", id));
+    });
+};
+
+window.quickAddClient = async () => {
+    const nom = document.getElementById('client-name').value.trim();
+    if (!nom) {
+        alert("Veuillez d'abord saisir un nom dans le champ ci-contre.");
+        return;
+    }
+    const exists = clientsData.some(c => c.nom.toLowerCase() === nom.toLowerCase());
+    if (exists) {
+        alert("Ce client est déjà dans le répertoire.");
+        return;
+    }
+    try {
+        await addDoc(collection(db, "clients"), {
+            nom: nom,
+            sexe: "Non précisé",
+            numero: "À compléter",
+            quartier: "À compléter",
+            timestamp: new Date()
+        });
+        showSuccessModal("Client ajouté au répertoire avec succès ! Vous pourrez compléter ses infos plus tard.");
+    } catch (err) { alert("Erreur : " + err.message); }
+};
+
+window.quickAddClientFromTable = async (nom) => {
+    if (!nom) return;
+    const exists = clientsData.some(c => c.nom.toLowerCase() === nom.toLowerCase());
+    if (exists) {
+        alert("Ce client est déjà dans le répertoire.");
+        return;
+    }
+    try {
+        await addDoc(collection(db, "clients"), {
+            nom: nom,
+            sexe: "Non précisé",
+            numero: "À compléter",
+            quartier: "À compléter",
+            timestamp: new Date()
+        });
+        showSuccessModal(`Le client <b>${nom}</b> a été ajouté au répertoire ! Vous pourrez compléter ses infos plus tard.`);
+    } catch (err) { alert("Erreur : " + err.message); }
 };
